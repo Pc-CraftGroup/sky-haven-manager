@@ -152,21 +152,29 @@ const Dashboard: React.FC = () => {
       <div className="container mx-auto p-6">
         <Tabs defaultValue="dashboard" className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-8">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Dashboard
+            <TabsTrigger value="dashboard">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Dashboard
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="fleet" className="flex items-center gap-2">
-              <Plane className="w-4 h-4" />
-              Flotte
+            <TabsTrigger value="fleet">
+              <div className="flex items-center gap-2">
+                <Plane className="w-4 h-4" />
+                Flotte
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="map" className="flex items-center gap-2">
-              <Map className="w-4 h-4" />
-              Weltkarte
+            <TabsTrigger value="map">
+              <div className="flex items-center gap-2">
+                <Map className="w-4 h-4" />
+                Weltkarte
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="purchase" className="flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4" />
-              Kaufen
+            <TabsTrigger value="purchase">
+              <div className="flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4" />
+                Kaufen
+              </div>
             </TabsTrigger>
           </TabsList>
 
