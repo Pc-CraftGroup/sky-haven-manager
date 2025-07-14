@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Plane, Users, Fuel, MapPin, Settings, Eye } from 'lucide-react';
 
 interface Aircraft {
@@ -64,9 +63,9 @@ const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView })
             <p className="text-sm text-muted-foreground mt-1">{aircraft.model}</p>
             <p className="text-xs text-muted-foreground">{aircraft.airline}</p>
           </div>
-          <Badge className={getStatusColor(aircraft.status)}>
+          <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(aircraft.status)}`}>
             {getStatusText(aircraft.status)}
-          </Badge>
+          </div>
         </div>
       </CardHeader>
       
