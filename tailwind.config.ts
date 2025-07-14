@@ -52,6 +52,15 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Aviation-specific colors
+				aviation: {
+					blue: 'hsl(var(--aviation-blue))',
+					silver: 'hsl(var(--aviation-silver))',
+					gold: 'hsl(var(--aviation-gold))'
+				},
+				operational: 'hsl(var(--operational-green))',
+				warning: 'hsl(var(--warning-amber))',
+				critical: 'hsl(var(--critical-red))',
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
@@ -67,6 +76,14 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			backgroundImage: {
+				'gradient-sky': 'var(--gradient-sky)',
+				'gradient-metal': 'var(--gradient-metal)'
+			},
+			boxShadow: {
+				'aircraft': 'var(--shadow-aircraft)',
+				'elevation': 'var(--shadow-elevation)'
 			},
 			keyframes: {
 				'accordion-down': {
