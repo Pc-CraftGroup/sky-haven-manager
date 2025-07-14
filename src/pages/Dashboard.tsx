@@ -197,14 +197,20 @@ const Dashboard: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {aircraft.map((plane) => (
-                <AircraftCard
-                  key={plane.id}
-                  aircraft={plane}
-                  onEdit={handleAircraftEdit}
-                  onView={handleAircraftView}
-                />
-              ))}
+              {aircraft.length > 0 ? aircraft.map((plane) => {
+                return (
+                  <AircraftCard
+                    key={plane.id}
+                    aircraft={plane}
+                    onEdit={handleAircraftEdit}
+                    onView={handleAircraftView}
+                  />
+                );
+              }) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-muted-foreground">Keine Flugzeuge in der Flotte</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
