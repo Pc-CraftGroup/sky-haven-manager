@@ -8,7 +8,7 @@ interface Aircraft {
   model: string;
   registration: string;
   airline: string;
-  status: 'operational' | 'maintenance' | 'grounded';
+  status: 'idle' | 'in-flight' | 'maintenance' | 'grounded';
   location: string;
   passengers: number;
   maxPassengers: number;
@@ -27,8 +27,10 @@ interface AircraftCardProps {
 const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'operational':
+      case 'idle':
         return 'bg-operational text-white';
+      case 'in-flight':
+        return 'bg-accent text-white';
       case 'maintenance':
         return 'bg-warning text-white';
       case 'grounded':
@@ -40,8 +42,10 @@ const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView })
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'operational':
-        return 'Operativ';
+      case 'idle':
+        return 'Bereit';
+      case 'in-flight':
+        return 'Im Flug';
       case 'maintenance':
         return 'Wartung';
       case 'grounded':

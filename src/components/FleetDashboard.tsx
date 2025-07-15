@@ -5,7 +5,8 @@ import { Plane, Plus, Settings, BarChart3, Globe } from 'lucide-react';
 
 interface FleetStats {
   totalAircraft: number;
-  operational: number;
+  idle: number;
+  inFlight: number;
   maintenance: number;
   grounded: number;
   totalRevenue: number;
@@ -71,14 +72,14 @@ const FleetDashboard: React.FC<FleetDashboardProps> = ({
         <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Operativ
+              Bereit/Im Flug
             </CardTitle>
             <div className="h-3 w-3 rounded-full bg-operational"></div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-operational">{stats.operational}</div>
+            <div className="text-2xl font-bold text-operational">{stats.idle + stats.inFlight}</div>
             <p className="text-xs text-muted-foreground">
-              Aktive Flugzeuge
+              Verfügbare Flugzeuge
             </p>
           </CardContent>
         </Card>

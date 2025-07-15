@@ -2,12 +2,27 @@ import { useState, useEffect, useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 import { useToast } from './use-toast';
 
+export interface FlightRoute {
+  id: string;
+  from: string;
+  to: string;
+  fromCoordinates: [number, number];
+  toCoordinates: [number, number];
+  distance: number;
+  duration: number; // in minutes
+  price: number;
+  scheduledDeparture?: string;
+  status: 'scheduled' | 'in-flight' | 'completed' | 'cancelled';
+  startTime?: string;
+  progress?: number; // 0-100
+}
+
 export interface Aircraft {
   id: string;
   model: string;
   registration: string;
   airline: string;
-  status: 'operational' | 'maintenance' | 'grounded';
+  status: 'idle' | 'in-flight' | 'maintenance' | 'grounded';
   location: string;
   passengers: number;
   maxPassengers: number;
@@ -19,6 +34,7 @@ export interface Aircraft {
   purchasePrice: number;
   dailyRevenue: number;
   condition: number; // 0-100
+  currentRoute?: FlightRoute;
 }
 
 export interface GameState {
@@ -101,36 +117,58 @@ export function useGameLogic() {
   const updateGameTick = useCallback((minutesPassed: number) => {
     setAircraft(currentAircraft => {
       const updatedAircraft = currentAircraft.map(plane => {
-        if (plane.status === 'operational') {
-          // Generate revenue based on passenger load and efficiency
-          const revenuePerMinute = (plane.passengers * 0.5 * plane.dailyRevenue) / (24 * 60);
+        if (plane.status === 'in-flight' && plane.currentRoute) {
+          // Update flight progress
+          const progressIncrement = (minutesPassed / plane.currentRoute.duration) * 100;
+          const newProgress = Math.min(100, (plane.currentRoute.progress || 0) + progressIncrement);
+          
+          // Calculate new position based on progress
+          const fromCoords = plane.currentRoute.fromCoordinates;
+          const toCoords = plane.currentRoute.toCoordinates;
+          const progressRatio = newProgress / 100;
+          
+          const newPosition: [number, number] = [
+            fromCoords[0] + (toCoords[0] - fromCoords[0]) * progressRatio,
+            fromCoords[1] + (toCoords[1] - fromCoords[1]) * progressRatio
+          ];
+
           const fuelConsumption = Math.max(1, plane.passengers / plane.maxPassengers * 2);
+          
+          // Check if flight is completed
+          if (newProgress >= 100) {
+            const revenue = plane.currentRoute.price * plane.passengers;
+            setGameState(current => ({
+              ...current,
+              budget: current.budget + revenue,
+              totalRevenue: current.totalRevenue + revenue,
+            }));
+
+            return {
+              ...plane,
+              status: 'idle' as const,
+              position: toCoords,
+              location: plane.currentRoute.to,
+              fuelLevel: Math.max(0, plane.fuelLevel - (fuelConsumption * minutesPassed)),
+              totalFlightHours: plane.totalFlightHours + (plane.currentRoute.duration / 60),
+              condition: Math.max(0, plane.condition - (0.1 * minutesPassed)),
+              currentRoute: undefined,
+            };
+          }
           
           return {
             ...plane,
+            position: newPosition,
             fuelLevel: Math.max(0, plane.fuelLevel - (fuelConsumption * minutesPassed)),
             totalFlightHours: plane.totalFlightHours + (minutesPassed / 60),
             condition: Math.max(0, plane.condition - (0.1 * minutesPassed)),
+            currentRoute: {
+              ...plane.currentRoute,
+              progress: newProgress,
+            },
           };
         }
         return plane;
       });
-
-      // Calculate total revenue generated
-      const totalNewRevenue = updatedAircraft
-        .filter(plane => plane.status === 'operational')
-        .reduce((sum, plane) => {
-          const revenuePerMinute = (plane.passengers * 0.5 * plane.dailyRevenue) / (24 * 60);
-          return sum + (revenuePerMinute * minutesPassed);
-        }, 0);
-
-      // Update game state
-      setGameState(currentState => ({
-        ...currentState,
-        budget: currentState.budget + totalNewRevenue,
-        totalRevenue: currentState.totalRevenue + totalNewRevenue,
-        lastUpdateDate: new Date().toISOString(),
-      }));
 
       return updatedAircraft;
     });
@@ -153,7 +191,7 @@ export function useGameLogic() {
       model: `${aircraftModel.manufacturer} ${aircraftModel.model}`,
       registration: `D-${Math.random().toString(36).substr(2, 4).toUpperCase()}`,
       airline: 'Meine Airline',
-      status: 'operational',
+      status: 'idle',
       location: randomAirport.name,
       passengers: Math.floor(Math.random() * aircraftModel.maxPassengers * 0.8),
       maxPassengers: aircraftModel.maxPassengers,
@@ -261,7 +299,7 @@ export function useGameLogic() {
       setAircraft(current => 
         current.map(a => 
           a.id === aircraftId 
-            ? { ...a, status: 'operational' }
+            ? { ...a, status: 'idle' }
             : a
         )
       );
@@ -302,10 +340,53 @@ export function useGameLogic() {
     });
   }, [setAircraft, setGameState, toast]);
 
+  const startFlight = useCallback((aircraftId: string, route: FlightRoute) => {
+    const plane = aircraft.find(a => a.id === aircraftId);
+    if (!plane || plane.status !== 'idle') {
+      toast({
+        title: "Flug nicht möglich",
+        description: "Das Flugzeug ist nicht verfügbar für einen Flug.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (plane.fuelLevel < 20) {
+      toast({
+        title: "Nicht genug Treibstoff",
+        description: "Das Flugzeug muss erst betankt werden.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAircraft(current => 
+      current.map(a => 
+        a.id === aircraftId 
+          ? { 
+              ...a, 
+              status: 'in-flight',
+              currentRoute: {
+                ...route,
+                startTime: new Date().toISOString(),
+                progress: 0,
+              }
+            }
+          : a
+      )
+    );
+
+    toast({
+      title: "Flug gestartet",
+      description: `${plane.registration} fliegt von ${route.from} nach ${route.to}.`,
+    });
+  }, [aircraft, setAircraft, toast]);
+
   // Calculate fleet statistics
   const fleetStats = {
     totalAircraft: aircraft.length,
-    operational: aircraft.filter(a => a.status === 'operational').length,
+    idle: aircraft.filter(a => a.status === 'idle').length,
+    inFlight: aircraft.filter(a => a.status === 'in-flight').length,
     maintenance: aircraft.filter(a => a.status === 'maintenance').length,
     grounded: aircraft.filter(a => a.status === 'grounded').length,
     totalRevenue: gameState.totalRevenue,
@@ -321,6 +402,8 @@ export function useGameLogic() {
     performMaintenance,
     sellAircraft,
     resetGame,
+    startFlight,
+    germanAirports,
     setAircraft,
     setGameState,
   };

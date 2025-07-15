@@ -4,11 +4,12 @@ import FleetDashboard from '@/components/FleetDashboard';
 import AviationMap from '@/components/AviationMap';
 import AircraftCard from '@/components/AircraftCard';
 import AircraftPurchase from '@/components/AircraftPurchase';
+import FlightPlanner from '@/components/FlightPlanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGameLogic } from '@/hooks/useGameLogic';
-import { Plane, Map, ShoppingCart, BarChart3, RotateCcw } from 'lucide-react';
+import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const [selectedAircraft, setSelectedAircraft] = useState<any>(null);
@@ -22,6 +23,8 @@ const Dashboard: React.FC = () => {
     performMaintenance,
     sellAircraft,
     resetGame,
+    startFlight,
+    germanAirports,
   } = useGameLogic();
 
   const handleAddAircraft = () => {
