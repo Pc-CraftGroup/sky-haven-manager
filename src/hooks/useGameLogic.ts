@@ -25,8 +25,8 @@ export interface GameState {
   budget: number;
   totalRevenue: number;
   totalRoutes: number;
-  gameStartDate: Date;
-  lastUpdateDate: Date;
+  gameStartDate: string;
+  lastUpdateDate: string;
   reputation: number;
 }
 
@@ -62,8 +62,8 @@ const initialGameState: GameState = {
   budget: 500000000, // 500 million
   totalRevenue: 0,
   totalRoutes: 0,
-  gameStartDate: new Date(),
-  lastUpdateDate: new Date(),
+  gameStartDate: new Date().toISOString(),
+  lastUpdateDate: new Date().toISOString(),
   reputation: 50, // Start with neutral reputation
 };
 
@@ -76,7 +76,18 @@ export function useGameLogic() {
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
-      const timeDiff = now.getTime() - new Date(gameState.lastUpdateDate).getTime();
+      const lastUpdate = new Date(gameState.lastUpdateDate);
+      
+      // Validate date - if invalid, reset to now
+      if (isNaN(lastUpdate.getTime())) {
+        setGameState(current => ({
+          ...current,
+          lastUpdateDate: now.toISOString(),
+        }));
+        return;
+      }
+      
+      const timeDiff = now.getTime() - lastUpdate.getTime();
       const minutesPassed = Math.floor(timeDiff / (1000 * 60));
 
       if (minutesPassed >= 1) {
@@ -85,7 +96,7 @@ export function useGameLogic() {
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [gameState.lastUpdateDate]);
+  }, [gameState.lastUpdateDate, setGameState]);
 
   const updateGameTick = useCallback((minutesPassed: number) => {
     setAircraft(currentAircraft => {
@@ -118,7 +129,7 @@ export function useGameLogic() {
         ...currentState,
         budget: currentState.budget + totalNewRevenue,
         totalRevenue: currentState.totalRevenue + totalNewRevenue,
-        lastUpdateDate: new Date(),
+        lastUpdateDate: new Date().toISOString(),
       }));
 
       return updatedAircraft;
