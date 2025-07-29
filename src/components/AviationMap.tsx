@@ -15,7 +15,7 @@ interface Aircraft {
   model: string;
   registration: string;
   position: [number, number];
-  status: 'idle' | 'in-flight' | 'maintenance' | 'grounded';
+  status: 'idle' | 'in-flight' | 'maintenance' | 'grounded' | 'delayed' | 'crashed';
   airline: string;
   location: string;
   passengers: number;
@@ -87,6 +87,8 @@ const AviationMap: React.FC<AviationMapProps> = ({ aircraft, onAircraftSelect })
           case 'in-flight': return '#3b82f6'; // blue
           case 'maintenance': return '#f59e0b'; // yellow
           case 'grounded': return '#ef4444'; // red
+          case 'delayed': return '#f97316'; // orange
+          case 'crashed': return '#7f1d1d'; // dark red
           default: return '#6b7280'; // gray
         }
       };
@@ -97,6 +99,8 @@ const AviationMap: React.FC<AviationMapProps> = ({ aircraft, onAircraftSelect })
           case 'in-flight': return '🛫';
           case 'maintenance': return '🔧';
           case 'grounded': return '⚠';
+          case 'delayed': return '⏰';
+          case 'crashed': return '💥';
           default: return '✈';
         }
       };

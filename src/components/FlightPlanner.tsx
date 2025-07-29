@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Plane, MapPin, Clock, Euro, Fuel } from 'lucide-react';
-import { Aircraft, FlightRoute } from '@/hooks/useGameLogic';
+import { Aircraft as AircraftType, FlightRoute } from '@/hooks/useGameLogic';
 
 interface Airport {
   name: string;
@@ -12,7 +12,7 @@ interface Airport {
 }
 
 interface FlightPlannerProps {
-  aircraft: Aircraft[];
+  aircraft: AircraftType[];
   airports: Airport[];
   onStartFlight: (aircraftId: string, route: FlightRoute) => void;
 }

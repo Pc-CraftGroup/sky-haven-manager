@@ -24,7 +24,7 @@ const Dashboard: React.FC = () => {
     sellAircraft,
     resetGame,
     startFlight,
-    germanAirports,
+    worldAirports,
   } = useGameLogic();
 
   const handleAddAircraft = () => {
@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
             <div className="flex justify-center">
               <FlightPlanner
                 aircraft={aircraft}
-                airports={germanAirports.map(airport => ({
+                airports={worldAirports.map(airport => ({
                   name: airport.name,
                   coordinates: airport.coordinates as [number, number]
                 }))}
