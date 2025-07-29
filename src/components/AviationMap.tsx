@@ -27,6 +27,7 @@ interface Aircraft {
     fromCoordinates: [number, number];
     toCoordinates: [number, number];
     progress?: number;
+    arrivalTime?: string;
   };
 }
 
@@ -153,6 +154,9 @@ const AviationMap: React.FC<AviationMapProps> = ({ aircraft, onAircraftSelect })
                 <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
                   <div><strong>Route:</strong> ${plane.currentRoute.from} → ${plane.currentRoute.to}</div>
                   <div><strong>Progress:</strong> ${Math.round(plane.currentRoute.progress || 0)}%</div>
+                  ${plane.currentRoute.arrivalTime ? `
+                    <div><strong>Ankunft:</strong> ${new Date(plane.currentRoute.arrivalTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div>
+                  ` : ''}
                 </div>
               ` : ''}
             </div>

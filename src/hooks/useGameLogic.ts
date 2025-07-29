@@ -14,6 +14,7 @@ export interface FlightRoute {
   scheduledDeparture?: string;
   status: 'scheduled' | 'in-flight' | 'completed' | 'cancelled';
   startTime?: string;
+  arrivalTime?: string;
   progress?: number; // 0-100
 }
 
@@ -90,7 +91,7 @@ export function useGameLogic() {
 
   // Game tick - runs every minute to simulate time passing
   useEffect(() => {
-    const interval = setInterval(() => {
+    const gameInterval = setInterval(() => {
       const now = new Date();
       const lastUpdate = new Date(gameState.lastUpdateDate);
       
@@ -111,8 +112,54 @@ export function useGameLogic() {
       }
     }, 60000); // Check every minute
 
-    return () => clearInterval(interval);
+    // Live movement for smooth aircraft animation
+    const movementInterval = setInterval(() => {
+      updateAircraftPositions();
+    }, 5000); // Update positions every 5 seconds
+
+    return () => {
+      clearInterval(gameInterval);
+      clearInterval(movementInterval);
+    };
   }, [gameState.lastUpdateDate, setGameState]);
+
+  const updateAircraftPositions = useCallback(() => {
+    setAircraft(currentAircraft => {
+      return currentAircraft.map(plane => {
+        if (plane.status === 'in-flight' && plane.currentRoute) {
+          const now = new Date();
+          const startTime = new Date(plane.currentRoute.startTime || now);
+          const timeElapsed = (now.getTime() - startTime.getTime()) / (1000 * 60); // minutes
+          const progress = Math.min(timeElapsed / plane.currentRoute.duration, 1) * 100;
+          
+          if (progress >= 100) {
+            // Flight completed - will be handled by main game tick
+            return plane;
+          }
+          
+          // Calculate current position based on progress
+          const fromCoords = plane.currentRoute.fromCoordinates;
+          const toCoords = plane.currentRoute.toCoordinates;
+          const progressRatio = progress / 100;
+          
+          const newPosition: [number, number] = [
+            fromCoords[0] + (toCoords[0] - fromCoords[0]) * progressRatio,
+            fromCoords[1] + (toCoords[1] - fromCoords[1]) * progressRatio
+          ];
+          
+          return {
+            ...plane,
+            position: newPosition,
+            currentRoute: {
+              ...plane.currentRoute,
+              progress
+            }
+          };
+        }
+        return plane;
+      });
+    });
+  }, [setAircraft]);
 
   const updateGameTick = useCallback((minutesPassed: number) => {
     setAircraft(currentAircraft => {
@@ -360,6 +407,9 @@ export function useGameLogic() {
       return;
     }
 
+    const departureTime = new Date();
+    const arrivalTime = new Date(departureTime.getTime() + route.duration * 60000);
+
     setAircraft(current => 
       current.map(a => 
         a.id === aircraftId 
@@ -368,7 +418,8 @@ export function useGameLogic() {
               status: 'in-flight',
               currentRoute: {
                 ...route,
-                startTime: new Date().toISOString(),
+                startTime: departureTime.toISOString(),
+                arrivalTime: arrivalTime.toISOString(),
                 progress: 0,
               }
             }
