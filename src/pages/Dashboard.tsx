@@ -121,7 +121,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
             <TabsTrigger value="dashboard">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
@@ -132,6 +132,12 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Plane className="w-4 h-4" />
                 Flotte
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="planning">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Flugplanung
               </div>
             </TabsTrigger>
             <TabsTrigger value="map">
@@ -181,6 +187,23 @@ const Dashboard: React.FC = () => {
                   <p className="text-muted-foreground">Keine Flugzeuge in der Flotte</p>
                 </div>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="planning" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-primary">Flugplanung</h2>
+            </div>
+            
+            <div className="flex justify-center">
+              <FlightPlanner
+                aircraft={aircraft}
+                airports={germanAirports.map(airport => ({
+                  name: airport.name,
+                  coordinates: airport.coordinates as [number, number]
+                }))}
+                onStartFlight={startFlight}
+              />
             </div>
           </TabsContent>
 
