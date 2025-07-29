@@ -41,6 +41,8 @@ const AviationMap: React.FC<AviationMapProps> = ({ aircraft, onAircraftSelect })
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const routeLinesRef = useRef<L.Polyline[]>([]);
+  const hasFitBoundsRef = useRef<boolean>(false);
+  const lastAircraftCountRef = useRef<number>(0);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -237,12 +239,16 @@ const AviationMap: React.FC<AviationMapProps> = ({ aircraft, onAircraftSelect })
       }
     });
 
-    // Fit map to show all aircraft
-    if (aircraft.length > 0 && mapInstanceRef.current) {
+    // Only fit map bounds if this is the first load or aircraft count changed
+    const shouldFitBounds = !hasFitBoundsRef.current || lastAircraftCountRef.current !== aircraft.length;
+    
+    if (shouldFitBounds && aircraft.length > 0 && mapInstanceRef.current) {
       const allMarkers = markersRef.current.filter(marker => marker.getLatLng);
       if (allMarkers.length > 0) {
         const group = new L.FeatureGroup(allMarkers);
         mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
+        hasFitBoundsRef.current = true;
+        lastAircraftCountRef.current = aircraft.length;
       }
     }
   }, [aircraft, onAircraftSelect]);
