@@ -9,11 +9,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGameLogic } from '@/hooks/useGameLogic';
-import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar } from 'lucide-react';
+import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const Dashboard: React.FC = () => {
   const [selectedAircraft, setSelectedAircraft] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [airlineSettings] = useLocalStorage<{
+    name: string;
+    logoText: string;
+    primaryColor: string;
+    secondaryColor: string;
+  }>('airline-settings', {
+    name: 'Skyline Airways',
+    logoText: 'SKY',
+    primaryColor: '#0EA5E9',
+    secondaryColor: '#F59E0B',
+  });
   const {
     aircraft,
     gameState,
@@ -108,16 +122,33 @@ const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">Aviation Management</h1>
-            <p className="text-muted-foreground">
-              Budget: <span className="font-semibold text-aviation-gold">€{gameState.budget.toLocaleString('de-DE')}</span>
-            </p>
+          <div className="flex items-center gap-4">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold shadow-aircraft"
+              style={{
+                background: `linear-gradient(135deg, ${airlineSettings.primaryColor}, ${airlineSettings.secondaryColor})`,
+                color: 'white',
+              }}
+            >
+              {airlineSettings.logoText.toUpperCase()}
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-primary">{airlineSettings.name}</h1>
+              <p className="text-muted-foreground">
+                Budget: <span className="font-semibold text-aviation-gold">€{gameState.budget.toLocaleString('de-DE')}</span>
+              </p>
+            </div>
           </div>
-          <Button onClick={handleResetGame} variant="outline" size="sm">
-            <RotateCcw className="w-4 h-4" />
-            Spiel zurücksetzen
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate('/settings')} variant="outline" size="sm">
+              <Settings className="w-4 h-4" />
+              Einstellungen
+            </Button>
+            <Button onClick={handleResetGame} variant="outline" size="sm">
+              <RotateCcw className="w-4 h-4" />
+              Zurücksetzen
+            </Button>
+          </div>
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
