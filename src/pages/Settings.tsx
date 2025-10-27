@@ -4,12 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plane } from 'lucide-react';
+import { ArrowLeft, Plane, Sparkles, AlertTriangle, Zap } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Form,
   FormControl,
@@ -36,12 +39,40 @@ const defaultSettings: AirlineSettings = {
   secondaryColor: '#F59E0B',
 };
 
+export interface CreativitySettings {
+  randomEvents: boolean;
+  eventFrequency: number; // 0-100
+  delayProbability: number; // 0-100
+  crashProbability: number; // 0-100
+  weatherEffects: boolean;
+  maintenanceVariability: number; // 0-100
+  fuelConsumptionVariability: number; // 0-100
+  passengerDemandVariability: number; // 0-100
+  difficulty: 'easy' | 'normal' | 'hard' | 'realistic';
+}
+
+const defaultCreativitySettings: CreativitySettings = {
+  randomEvents: true,
+  eventFrequency: 50,
+  delayProbability: 10,
+  crashProbability: 2,
+  weatherEffects: true,
+  maintenanceVariability: 30,
+  fuelConsumptionVariability: 20,
+  passengerDemandVariability: 40,
+  difficulty: 'normal',
+};
+
 const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [airlineSettings, setAirlineSettings] = useLocalStorage<AirlineSettings>(
     'airline-settings',
     defaultSettings
+  );
+  const [creativitySettings, setCreativitySettings] = useLocalStorage<CreativitySettings>(
+    'creativity-settings',
+    defaultCreativitySettings
   );
 
   const form = useForm<AirlineSettings>({
@@ -61,19 +92,61 @@ const Settings: React.FC = () => {
   const primaryColor = form.watch('primaryColor');
   const secondaryColor = form.watch('secondaryColor');
 
+  const handleCreativityChange = <K extends keyof CreativitySettings>(
+    key: K,
+    value: CreativitySettings[K]
+  ) => {
+    setCreativitySettings({ ...creativitySettings, [key]: value });
+  };
+
+  const saveCreativitySettings = () => {
+    toast({
+      title: 'Kreativitätseinstellungen gespeichert',
+      description: 'Die Spiel-Dynamik wurde angepasst.',
+    });
+  };
+
+  const getDifficultyDescription = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy':
+        return 'Weniger Zufallsereignisse, höhere Einnahmen';
+      case 'normal':
+        return 'Ausgewogenes Spielerlebnis';
+      case 'hard':
+        return 'Mehr Herausforderungen, geringere Margen';
+      case 'realistic':
+        return 'Realistische Wirtschaftlichkeit und Ereignisse';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="container mx-auto p-6 max-w-6xl">
         <div className="mb-6">
           <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Zurück zum Dashboard
           </Button>
           <h1 className="text-3xl font-bold text-primary">Einstellungen</h1>
-          <p className="text-muted-foreground">Verwalte deine Fluggesellschaft</p>
+          <p className="text-muted-foreground">Verwalte deine Fluggesellschaft und Spiel-Dynamik</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Tabs defaultValue="airline" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="airline" className="flex items-center gap-2">
+              <Plane className="h-4 w-4" />
+              Fluggesellschaft
+            </TabsTrigger>
+            <TabsTrigger value="creativity" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Kreativität & Dynamik
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="airline" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Fluggesellschaft</CardTitle>
@@ -209,8 +282,236 @@ const Settings: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+            </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="creativity" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Random Events */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5" />
+                    Zufallsereignisse
+                  </CardTitle>
+                  <CardDescription>
+                    Steuere die Häufigkeit und Art von zufälligen Events
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="random-events" className="flex flex-col gap-1">
+                      <span>Zufallsereignisse aktivieren</span>
+                      <span className="text-xs text-muted-foreground font-normal">
+                        Verspätungen, Defekte, Wetter, etc.
+                      </span>
+                    </Label>
+                    <Switch
+                      id="random-events"
+                      checked={creativitySettings.randomEvents}
+                      onCheckedChange={(checked) =>
+                        handleCreativityChange('randomEvents', checked)
+                      }
+                    />
+                  </div>
+
+                  {creativitySettings.randomEvents && (
+                    <>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <Label>Event-Häufigkeit</Label>
+                          <span className="text-sm text-muted-foreground">
+                            {creativitySettings.eventFrequency}%
+                          </span>
+                        </div>
+                        <Slider
+                          value={[creativitySettings.eventFrequency]}
+                          onValueChange={([value]) =>
+                            handleCreativityChange('eventFrequency', value)
+                          }
+                          max={100}
+                          step={5}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <Label className="flex items-center gap-1">
+                            <AlertTriangle className="h-4 w-4 text-orange-500" />
+                            Verspätungswahrscheinlichkeit
+                          </Label>
+                          <span className="text-sm text-muted-foreground">
+                            {creativitySettings.delayProbability}%
+                          </span>
+                        </div>
+                        <Slider
+                          value={[creativitySettings.delayProbability]}
+                          onValueChange={([value]) =>
+                            handleCreativityChange('delayProbability', value)
+                          }
+                          max={100}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <Label className="flex items-center gap-1">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                            Absturz-Wahrscheinlichkeit
+                          </Label>
+                          <span className="text-sm text-muted-foreground">
+                            {creativitySettings.crashProbability}%
+                          </span>
+                        </div>
+                        <Slider
+                          value={[creativitySettings.crashProbability]}
+                          onValueChange={([value]) =>
+                            handleCreativityChange('crashProbability', value)
+                          }
+                          max={20}
+                          step={0.5}
+                          className="w-full"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Hinweis: Sehr niedrige Werte empfohlen (0-5%)
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="weather-effects" className="flex flex-col gap-1">
+                      <span>Wettereffekte</span>
+                      <span className="text-xs text-muted-foreground font-normal">
+                        Wetter beeinflusst Flüge
+                      </span>
+                    </Label>
+                    <Switch
+                      id="weather-effects"
+                      checked={creativitySettings.weatherEffects}
+                      onCheckedChange={(checked) =>
+                        handleCreativityChange('weatherEffects', checked)
+                      }
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Variability Settings */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    Variabilität & Realismus
+                  </CardTitle>
+                  <CardDescription>
+                    Steuere wie dynamisch sich verschiedene Faktoren ändern
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Wartungskosten-Variabilität</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {creativitySettings.maintenanceVariability}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[creativitySettings.maintenanceVariability]}
+                      onValueChange={([value]) =>
+                        handleCreativityChange('maintenanceVariability', value)
+                      }
+                      max={100}
+                      step={5}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Wie stark schwanken die Wartungskosten
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Treibstoffverbrauch-Variabilität</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {creativitySettings.fuelConsumptionVariability}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[creativitySettings.fuelConsumptionVariability]}
+                      onValueChange={([value]) =>
+                        handleCreativityChange('fuelConsumptionVariability', value)
+                      }
+                      max={100}
+                      step={5}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Verbrauch je nach Bedingungen (Wetter, Route, etc.)
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Passagiernachfrage-Variabilität</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {creativitySettings.passengerDemandVariability}%
+                      </span>
+                    </div>
+                    <Slider
+                      value={[creativitySettings.passengerDemandVariability]}
+                      onValueChange={([value]) =>
+                        handleCreativityChange('passengerDemandVariability', value)
+                      }
+                      max={100}
+                      step={5}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Schwankungen der Ticketnachfrage
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-4 border-t">
+                    <Label>Schwierigkeitsgrad</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['easy', 'normal', 'hard', 'realistic'] as const).map((diff) => (
+                        <Button
+                          key={diff}
+                          variant={creativitySettings.difficulty === diff ? 'aviation' : 'outline'}
+                          size="sm"
+                          onClick={() => handleCreativityChange('difficulty', diff)}
+                          className="flex flex-col h-auto py-3"
+                        >
+                          <span className="font-semibold capitalize">
+                            {diff === 'easy' ? 'Einfach' : 
+                             diff === 'normal' ? 'Normal' : 
+                             diff === 'hard' ? 'Schwer' : 'Realistisch'}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {getDifficultyDescription(creativitySettings.difficulty)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <Button onClick={saveCreativitySettings} variant="aviation" size="lg">
+                <Sparkles className="h-4 w-4" />
+                Einstellungen speichern
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -3,18 +3,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FleetDashboard from '@/components/FleetDashboard';
 import AviationMap from '@/components/AviationMap';
 import AircraftCard from '@/components/AircraftCard';
+import AircraftDetails from '@/components/AircraftDetails';
 import AircraftPurchase from '@/components/AircraftPurchase';
 import FlightPlanner from '@/components/FlightPlanner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useGameLogic } from '@/hooks/useGameLogic';
+import { useGameLogic, Aircraft } from '@/hooks/useGameLogic';
 import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
 const Dashboard: React.FC = () => {
-  const [selectedAircraft, setSelectedAircraft] = useState<any>(null);
+  const [selectedAircraft, setSelectedAircraft] = useState<Aircraft | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [airlineSettings] = useLocalStorage<{
@@ -107,10 +109,7 @@ const Dashboard: React.FC = () => {
     const plane = aircraft.find(a => a.id === id);
     if (plane) {
       setSelectedAircraft(plane);
-      toast({
-        title: "Flugzeug Details",
-        description: `Details für ${plane.registration} angezeigt.`,
-      });
+      setDetailsOpen(true);
     }
   };
 
@@ -120,6 +119,14 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <AircraftDetails
+        aircraft={selectedAircraft}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        onRefuel={refuelAircraft}
+        onMaintenance={performMaintenance}
+        onSell={sellAircraft}
+      />
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
