@@ -64,6 +64,7 @@ export interface AircraftModel {
   yearIntroduced: number;
   efficiency: number;
   maintenance: number;
+  image: string;
 }
 
 // World airports with coordinates
@@ -361,6 +362,7 @@ export function useGameLogic() {
       purchasePrice: aircraftModel.price,
       dailyRevenue: aircraftModel.maxPassengers * 200, // Base revenue per passenger
       condition: 100,
+      image: aircraftModel.image,
     };
 
     setAircraft(current => [...current, newAircraft]);
