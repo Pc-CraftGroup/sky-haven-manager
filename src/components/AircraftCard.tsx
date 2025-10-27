@@ -8,7 +8,7 @@ interface Aircraft {
   model: string;
   registration: string;
   airline: string;
-  status: 'idle' | 'in-flight' | 'maintenance' | 'grounded';
+  status: 'idle' | 'in-flight' | 'maintenance' | 'grounded' | 'delayed' | 'crashed';
   location: string;
   passengers: number;
   maxPassengers: number;
@@ -35,6 +35,10 @@ const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView })
         return 'bg-warning text-white';
       case 'grounded':
         return 'bg-critical text-white';
+      case 'delayed':
+        return 'bg-orange-500 text-white';
+      case 'crashed':
+        return 'bg-red-900 text-white';
       default:
         return 'bg-muted text-muted-foreground';
     }
@@ -50,6 +54,10 @@ const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView })
         return 'Wartung';
       case 'grounded':
         return 'Am Boden';
+      case 'delayed':
+        return 'Verspätet';
+      case 'crashed':
+        return 'Abgestürzt';
       default:
         return status;
     }
