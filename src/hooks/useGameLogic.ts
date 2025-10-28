@@ -39,6 +39,7 @@ export interface Aircraft {
   image?: string; // Aircraft image URL
   delayReason?: string;
   crashReason?: string;
+  range?: number; // Maximum flight range in km
 }
 
 export interface GameState {
@@ -363,6 +364,7 @@ export function useGameLogic() {
       dailyRevenue: aircraftModel.maxPassengers * 200, // Base revenue per passenger
       condition: 100,
       image: aircraftModel.image,
+      range: aircraftModel.range,
     };
 
     setAircraft(current => [...current, newAircraft]);

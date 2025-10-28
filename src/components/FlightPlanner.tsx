@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Plane, MapPin, Clock, Euro, Fuel } from 'lucide-react';
+import { Plane, MapPin, Clock, Euro, Fuel, AlertTriangle } from 'lucide-react';
 import { Aircraft as AircraftType, FlightRoute } from '@/hooks/useGameLogic';
 
 interface Airport {
@@ -62,8 +62,12 @@ const FlightPlanner: React.FC<FlightPlannerProps> = ({ aircraft, airports, onSta
     };
   };
 
+  const route = generateRoute();
+  const selectedPlane = aircraft.find(a => a.id === selectedAircraft);
+  const canReachDestination = route && selectedPlane ? route.distance <= (selectedPlane.range || Infinity) : true;
+
   const handleStartFlight = () => {
-    if (!selectedAircraft || !selectedFromAirport || !selectedToAirport) return;
+    if (!selectedAircraft || !selectedFromAirport || !selectedToAirport || !canReachDestination) return;
     
     const route = generateRoute();
     if (route) {
@@ -74,8 +78,6 @@ const FlightPlanner: React.FC<FlightPlannerProps> = ({ aircraft, airports, onSta
       setSelectedToAirport('');
     }
   };
-
-  const route = generateRoute();
 
   return (
     <Card className="w-full max-w-2xl">
@@ -168,14 +170,34 @@ const FlightPlanner: React.FC<FlightPlannerProps> = ({ aircraft, airports, onSta
                 <Euro className="h-4 w-4" />
                 <span>€{route.price} pro Passagier</span>
               </div>
+              {selectedPlane && selectedPlane.range && (
+                <div className="flex items-center gap-2">
+                  <Plane className="h-4 w-4" />
+                  <span>Reichweite: {selectedPlane.range} km</span>
+                </div>
+              )}
             </div>
+            {!canReachDestination && selectedPlane && (
+              <div className="mt-3 p-3 bg-destructive/10 border border-destructive rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-destructive mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-destructive">Reichweite überschritten!</p>
+                    <p className="text-sm text-muted-foreground">
+                      Dieses Flugzeug kann nur {selectedPlane.range} km fliegen. Die Strecke beträgt {route.distance} km.
+                      Bitte wähle einen Zwischenstopp oder ein anderes Flugzeug.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Start Flight Button */}
         <Button 
           onClick={handleStartFlight} 
-          disabled={!selectedAircraft || !selectedFromAirport || !selectedToAirport}
+          disabled={!selectedAircraft || !selectedFromAirport || !selectedToAirport || !canReachDestination}
           className="w-full"
         >
           <Plane className="h-4 w-4 mr-2" />

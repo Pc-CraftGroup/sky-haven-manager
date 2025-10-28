@@ -36,6 +36,7 @@ interface AircraftDetailsProps {
   onRefuel?: (id: string) => void;
   onMaintenance?: (id: string) => void;
   onSell?: (id: string) => void;
+  onEdit?: (id: string) => void;
 }
 
 const AircraftDetails: React.FC<AircraftDetailsProps> = ({
@@ -45,6 +46,7 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
   onRefuel,
   onMaintenance,
   onSell,
+  onEdit,
 }) => {
   const [cabinConfig] = useLocalStorage<CabinConfiguration>(
     'cabin-configuration',
@@ -159,6 +161,20 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
                   {aircraft.position[0].toFixed(4)}, {aircraft.position[1].toFixed(4)}
                 </p>
               </div>
+              {aircraft.range && (
+                <>
+                  <div>
+                    <p className="text-muted-foreground">Maximale Reichweite</p>
+                    <p className="font-medium">{aircraft.range.toLocaleString('de-DE')} km</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Reichweite bei {aircraft.fuelLevel}% Treibstoff</p>
+                    <p className="font-medium">
+                      {Math.round(aircraft.range * (aircraft.fuelLevel / 100)).toLocaleString('de-DE')} km
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -373,6 +389,16 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
 
           {/* Action Buttons */}
           <div className="space-y-2 pt-4">
+            {onEdit && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => onEdit(aircraft.id)}
+              >
+                <Wrench className="h-4 w-4 mr-2" />
+                Flugzeug bearbeiten
+              </Button>
+            )}
             {onRefuel && aircraft.fuelLevel < 100 && (
               <Button
                 variant="aviation"

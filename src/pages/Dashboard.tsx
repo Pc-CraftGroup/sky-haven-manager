@@ -113,6 +113,14 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleEditAircraft = (id: string) => {
+    toast({
+      title: "Flugzeug bearbeiten",
+      description: "Bearbeitungsmodus öffnet sich...",
+    });
+    // TODO: Implement edit functionality
+  };
+
   const handlePurchaseAircraft = (aircraftModel: any) => {
     purchaseAircraft(aircraftModel);
   };
@@ -126,6 +134,7 @@ const Dashboard: React.FC = () => {
         onRefuel={refuelAircraft}
         onMaintenance={performMaintenance}
         onSell={sellAircraft}
+        onEdit={handleEditAircraft}
       />
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-between mb-6">
