@@ -23,8 +23,11 @@ import {
   CheckCircle2,
   DollarSign,
   Navigation,
+  Armchair,
 } from 'lucide-react';
 import { Aircraft } from '@/hooks/useGameLogic';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import type { CabinConfiguration } from '@/pages/Settings';
 
 interface AircraftDetailsProps {
   aircraft: Aircraft | null;
@@ -43,6 +46,16 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
   onMaintenance,
   onSell,
 }) => {
+  const [cabinConfig] = useLocalStorage<CabinConfiguration>(
+    'cabin-configuration',
+    {
+      firstClass: 5,
+      business: 15,
+      premiumEconomy: 20,
+      economy: 60,
+    }
+  );
+
   if (!aircraft) return null;
 
   const getStatusColor = (status: string) => {
@@ -242,6 +255,46 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
                   aircraft.condition > 40 ? '[&>div]:bg-warning' : '[&>div]:bg-critical'
                 }
               />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Cabin Configuration */}
+          <div className="space-y-4">
+            <h3 className="font-semibold flex items-center gap-2">
+              <Armchair className="h-5 w-5 text-primary" />
+              Kabinenkonfiguration
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">First Class</p>
+                <p className="text-lg font-bold">
+                  {Math.round((aircraft.maxPassengers * cabinConfig.firstClass) / 100)} Sitze
+                </p>
+                <p className="text-xs text-muted-foreground">{cabinConfig.firstClass}%</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Business</p>
+                <p className="text-lg font-bold">
+                  {Math.round((aircraft.maxPassengers * cabinConfig.business) / 100)} Sitze
+                </p>
+                <p className="text-xs text-muted-foreground">{cabinConfig.business}%</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Premium Economy</p>
+                <p className="text-lg font-bold">
+                  {Math.round((aircraft.maxPassengers * cabinConfig.premiumEconomy) / 100)} Sitze
+                </p>
+                <p className="text-xs text-muted-foreground">{cabinConfig.premiumEconomy}%</p>
+              </div>
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-xs text-muted-foreground mb-1">Economy</p>
+                <p className="text-lg font-bold">
+                  {Math.round((aircraft.maxPassengers * cabinConfig.economy) / 100)} Sitze
+                </p>
+                <p className="text-xs text-muted-foreground">{cabinConfig.economy}%</p>
+              </div>
             </div>
           </div>
 
