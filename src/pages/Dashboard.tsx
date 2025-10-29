@@ -6,6 +6,8 @@ import AircraftCard from '@/components/AircraftCard';
 import AircraftDetails from '@/components/AircraftDetails';
 import AircraftPurchase from '@/components/AircraftPurchase';
 import FlightPlanner from '@/components/FlightPlanner';
+import AnalyticsDrawer from '@/components/AnalyticsDrawer';
+import FleetManagementDrawer from '@/components/FleetManagementDrawer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +19,8 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 const Dashboard: React.FC = () => {
   const [selectedAircraft, setSelectedAircraft] = useState<Aircraft | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+  const [fleetManagementOpen, setFleetManagementOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [airlineSettings] = useLocalStorage<{
@@ -44,24 +48,15 @@ const Dashboard: React.FC = () => {
   } = useGameLogic();
 
   const handleAddAircraft = () => {
-    toast({
-      title: "Flugzeugkauf",
-      description: "Wechsle zum Kaufen-Tab um neue Flugzeuge zu erwerben.",
-    });
+    // Switch to purchase tab (already handled in FleetDashboard button)
   };
 
   const handleManageFleet = () => {
-    toast({
-      title: "Flotten-Verwaltung",
-      description: "Erweiterte Verwaltungstools verfügbar.",
-    });
+    setFleetManagementOpen(true);
   };
 
   const handleViewAnalytics = () => {
-    toast({
-      title: "Analytics",
-      description: `Budget: €${gameState.budget.toLocaleString('de-DE')} | Umsatz: €${gameState.totalRevenue.toLocaleString('de-DE')}`,
-    });
+    setAnalyticsOpen(true);
   };
 
   const handleResetGame = () => {
@@ -135,6 +130,22 @@ const Dashboard: React.FC = () => {
         onMaintenance={performMaintenance}
         onSell={sellAircraft}
         onEdit={handleEditAircraft}
+      />
+      
+      <AnalyticsDrawer
+        open={analyticsOpen}
+        onOpenChange={setAnalyticsOpen}
+        gameState={gameState}
+        aircraft={aircraft}
+      />
+      
+      <FleetManagementDrawer
+        open={fleetManagementOpen}
+        onOpenChange={setFleetManagementOpen}
+        aircraft={aircraft}
+        onRefuel={refuelAircraft}
+        onMaintenance={performMaintenance}
+        onSell={sellAircraft}
       />
       <div className="container mx-auto p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
