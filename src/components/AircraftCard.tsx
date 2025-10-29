@@ -138,8 +138,8 @@ const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView })
             className="flex-1"
             onClick={() => onView(aircraft.id)}
           >
-            <Eye className="w-4 h-4" />
-            Details
+            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="ml-1 text-xs sm:text-sm">Details</span>
           </Button>
           <Button 
             variant="secondary" 
@@ -147,8 +147,9 @@ const AircraftCard: React.FC<AircraftCardProps> = ({ aircraft, onEdit, onView })
             className="flex-1"
             onClick={() => onEdit(aircraft.id)}
           >
-            <Settings className="w-4 h-4" />
-            Bearbeiten
+            <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="ml-1 text-xs sm:text-sm hidden xs:inline">Bearbeiten</span>
+            <span className="ml-1 text-xs xs:hidden">Edit</span>
           </Button>
         </div>
       </CardContent>

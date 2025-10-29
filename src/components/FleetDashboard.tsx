@@ -29,31 +29,32 @@ const FleetDashboard: React.FC<FleetDashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-primary">Aviation Management</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">Aviation Management</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Verwalte deine Flotte und überwache globale Operationen
           </p>
         </div>
-        <div className="flex gap-3">
-          <Button onClick={onViewAnalytics} variant="outline" size="lg">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
+          <Button onClick={onViewAnalytics} variant="outline" size="lg" className="w-full sm:w-auto">
             <BarChart3 className="w-4 h-4" />
-            Analytics
+            <span className="ml-2">Analytics</span>
           </Button>
-          <Button onClick={onManageFleet} variant="secondary" size="lg">
+          <Button onClick={onManageFleet} variant="secondary" size="lg" className="w-full sm:w-auto">
             <Settings className="w-4 h-4" />
-            Flotten-Verwaltung
+            <span className="ml-2 hidden sm:inline">Flotten-Verwaltung</span>
+            <span className="ml-2 sm:hidden">Verwaltung</span>
           </Button>
-          <Button onClick={onAddAircraft} variant="aviation" size="lg">
+          <Button onClick={onAddAircraft} variant="aviation" size="lg" className="w-full sm:w-auto">
             <Plus className="w-4 h-4" />
-            Flugzeug kaufen
+            <span className="ml-2">Flugzeug kaufen</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card className="bg-gradient-metal border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -116,7 +117,7 @@ const FleetDashboard: React.FC<FleetDashboardProps> = ({
       </div>
 
       {/* Revenue and Routes Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card className="border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

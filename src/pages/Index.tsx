@@ -19,11 +19,11 @@ const Index = () => {
           <div className="absolute inset-0 bg-primary/80"></div>
         </div>
         
-        <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-6">
-          <h1 className="text-6xl font-bold mb-6 bg-gradient-to-r from-white to-aviation-silver bg-clip-text text-transparent">
+        <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4 sm:px-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-white to-aviation-silver bg-clip-text text-transparent">
             Aviation Management Simulator
           </h1>
-          <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 text-white/90 max-w-2xl mx-auto">
             Verwalte deine eigene Fluggesellschaft. Kaufe Flugzeuge, verwalte Routen und 
             erobere den Himmel in diesem realistischen Aviation-Simulator.
           </p>
@@ -31,23 +31,23 @@ const Index = () => {
             size="lg" 
             variant="aviation"
             onClick={() => navigate('/dashboard')}
-            className="text-lg px-8 py-4 h-auto"
+            className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto"
           >
-            <Plane className="w-5 h-5 mr-2" />
+            <Plane className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Simulator starten
-            <ArrowRight className="w-5 h-5 ml-2" />
+            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
           </Button>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-background">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-primary mb-4">
+      <section className="py-12 sm:py-16 md:py-20 bg-background">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 sm:mb-12 md:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">
               Realistische Flugzeug-Verwaltung
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
               Erlebe alle Aspekte des Airline-Managements mit authentischen Daten und realistischen Abläufen.
             </p>
           </div>
@@ -105,12 +105,12 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-sky">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold text-white mb-6">
+      <section className="py-12 sm:py-16 md:py-20 bg-gradient-sky">
+        <div className="container mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 sm:mb-6">
             Bereit zum Abheben?
           </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 max-w-2xl mx-auto px-4">
             Starte jetzt deine Karriere als Airline-Manager und baue das erfolgreichste 
             Luftfahrtunternehmen der Welt auf.
           </p>
@@ -118,9 +118,9 @@ const Index = () => {
             size="lg" 
             variant="secondary"
             onClick={() => navigate('/dashboard')}
-            className="text-lg px-8 py-4 h-auto bg-white text-primary hover:bg-white/90"
+            className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto bg-white text-primary hover:bg-white/90"
           >
-            <Plane className="w-5 h-5 mr-2" />
+            <Plane className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             Jetzt spielen
           </Button>
         </div>

@@ -136,11 +136,11 @@ const Dashboard: React.FC = () => {
         onSell={sellAircraft}
         onEdit={handleEditAircraft}
       />
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+          <div className="flex items-center gap-3 sm:gap-4">
             <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold shadow-aircraft"
+              className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-base sm:text-lg md:text-xl font-bold shadow-aircraft"
               style={{
                 background: `linear-gradient(135deg, ${airlineSettings.primaryColor}, ${airlineSettings.secondaryColor})`,
                 color: 'white',
@@ -149,54 +149,54 @@ const Dashboard: React.FC = () => {
               {airlineSettings.logoText.toUpperCase()}
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-primary">{airlineSettings.name}</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary">{airlineSettings.name}</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Budget: <span className="font-semibold text-aviation-gold">€{gameState.budget.toLocaleString('de-DE')}</span>
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => navigate('/settings')} variant="outline" size="sm">
-              <Settings className="w-4 h-4" />
-              Einstellungen
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button onClick={() => navigate('/settings')} variant="outline" size="sm" className="flex-1 sm:flex-none">
+              <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline ml-1">Einstellungen</span>
             </Button>
-            <Button onClick={handleResetGame} variant="outline" size="sm">
-              <RotateCcw className="w-4 h-4" />
-              Zurücksetzen
+            <Button onClick={handleResetGame} variant="outline" size="sm" className="flex-1 sm:flex-none">
+              <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline ml-1">Zurücksetzen</span>
             </Button>
           </div>
         </div>
 
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-8">
-            <TabsTrigger value="dashboard">
-              <div className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-5 mb-4 sm:mb-6 md:mb-8 h-auto">
+            <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <BarChart3 className="w-4 h-4" />
-                Dashboard
+                <span className="hidden sm:inline">Dashboard</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="fleet">
-              <div className="flex items-center gap-2">
+            <TabsTrigger value="fleet" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <Plane className="w-4 h-4" />
-                Flotte
+                <span className="hidden sm:inline">Flotte</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="planning">
-              <div className="flex items-center gap-2">
+            <TabsTrigger value="planning" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <Calendar className="w-4 h-4" />
-                Flugplanung
+                <span className="hidden sm:inline">Planung</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="map">
-              <div className="flex items-center gap-2">
+            <TabsTrigger value="map" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <Map className="w-4 h-4" />
-                Weltkarte
+                <span className="hidden sm:inline">Karte</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger value="purchase">
-              <div className="flex items-center gap-2">
+            <TabsTrigger value="purchase" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <ShoppingCart className="w-4 h-4" />
-                Kaufen
+                <span className="hidden sm:inline">Kaufen</span>
               </div>
             </TabsTrigger>
           </TabsList>
@@ -210,16 +210,16 @@ const Dashboard: React.FC = () => {
             />
           </TabsContent>
 
-          <TabsContent value="fleet" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-primary">Meine Flotte</h2>
-              <Button variant="aviation" onClick={handleAddAircraft}>
+          <TabsContent value="fleet" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-primary">Meine Flotte</h2>
+              <Button variant="aviation" onClick={handleAddAircraft} className="w-full sm:w-auto">
                 <Plane className="w-4 h-4" />
                 Neues Flugzeug
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {aircraft.length > 0 ? aircraft.map((plane) => {
                 return (
                   <AircraftCard
@@ -237,12 +237,12 @@ const Dashboard: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="planning" className="space-y-6">
+          <TabsContent value="planning" className="space-y-4 sm:space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-primary">Flugplanung</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-primary">Flugplanung</h2>
             </div>
             
-            <div className="flex justify-center">
+            <div className="flex justify-center px-0 sm:px-4">
               <FlightPlanner
                 aircraft={aircraft}
                 airports={worldAirports.map(airport => ({
@@ -254,20 +254,20 @@ const Dashboard: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="map" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-primary">Globale Übersicht</h2>
+          <TabsContent value="map" className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <h2 className="text-xl sm:text-2xl font-bold text-primary">Globale Übersicht</h2>
               {selectedAircraft && (
-                <Card className="bg-gradient-metal border-border">
-                  <CardContent className="p-4">
-                    <p className="text-sm font-medium">Ausgewählt: {selectedAircraft.registration}</p>
+                <Card className="bg-gradient-metal border-border w-full sm:w-auto">
+                  <CardContent className="p-3 sm:p-4">
+                    <p className="text-xs sm:text-sm font-medium">Ausgewählt: {selectedAircraft.registration}</p>
                     <p className="text-xs text-muted-foreground">{selectedAircraft.model}</p>
                   </CardContent>
                 </Card>
               )}
             </div>
             
-            <div className="h-[600px]">
+            <div className="h-[400px] sm:h-[500px] md:h-[600px]">
               <AviationMap
                 aircraft={aircraft}
                 onAircraftSelect={handleAircraftSelect}
