@@ -18,6 +18,13 @@ export interface FlightRoute {
   progress?: number; // 0-100
 }
 
+export interface CabinConfiguration {
+  firstClass: number;
+  business: number;
+  premiumEconomy: number;
+  economy: number;
+}
+
 export interface Aircraft {
   id: string;
   model: string;
@@ -40,6 +47,7 @@ export interface Aircraft {
   delayReason?: string;
   crashReason?: string;
   range?: number; // Maximum flight range in km
+  cabinConfig?: CabinConfiguration; // Individual cabin configuration
 }
 
 export interface GameState {
@@ -346,6 +354,12 @@ export function useGameLogic() {
 
     const randomAirport = worldAirports[Math.floor(Math.random() * worldAirports.length)];
     
+    // Get default cabin config from localStorage or use fallback
+    const savedCabinConfig = localStorage.getItem('cabinConfiguration');
+    const defaultCabinConfig: CabinConfiguration = savedCabinConfig 
+      ? JSON.parse(savedCabinConfig)
+      : { firstClass: 5, business: 15, premiumEconomy: 20, economy: 60 };
+    
     const newAircraft: Aircraft = {
       id: Date.now().toString(),
       model: `${aircraftModel.manufacturer} ${aircraftModel.model}`,
@@ -365,6 +379,7 @@ export function useGameLogic() {
       condition: 100,
       image: aircraftModel.image,
       range: aircraftModel.range,
+      cabinConfig: defaultCabinConfig,
     };
 
     setAircraft(current => [...current, newAircraft]);
@@ -559,6 +574,16 @@ export function useGameLogic() {
     totalRoutes: gameState.totalRoutes,
   };
 
+  const updateCabinConfig = useCallback((aircraftId: string, config: CabinConfiguration) => {
+    setAircraft(current => 
+      current.map(a => 
+        a.id === aircraftId 
+          ? { ...a, cabinConfig: config }
+          : a
+      )
+    );
+  }, [setAircraft]);
+
   return {
     aircraft,
     gameState,
@@ -572,5 +597,6 @@ export function useGameLogic() {
     worldAirports,
     setAircraft,
     setGameState,
+    updateCabinConfig,
   };
 }

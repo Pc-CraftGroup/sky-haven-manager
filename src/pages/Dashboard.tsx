@@ -8,6 +8,7 @@ import AircraftPurchase from '@/components/AircraftPurchase';
 import FlightPlanner from '@/components/FlightPlanner';
 import AnalyticsDrawer from '@/components/AnalyticsDrawer';
 import FleetManagementDrawer from '@/components/FleetManagementDrawer';
+import { CabinConfigEditor } from '@/components/CabinConfigEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +22,8 @@ const Dashboard: React.FC = () => {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [fleetManagementOpen, setFleetManagementOpen] = useState(false);
+  const [cabinEditorOpen, setCabinEditorOpen] = useState(false);
+  const [editingAircraftId, setEditingAircraftId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const [airlineSettings] = useLocalStorage<{
@@ -45,6 +48,7 @@ const Dashboard: React.FC = () => {
     resetGame,
     startFlight,
     worldAirports,
+    updateCabinConfig,
   } = useGameLogic();
 
   const handleAddAircraft = () => {
@@ -120,6 +124,15 @@ const Dashboard: React.FC = () => {
     purchaseAircraft(aircraftModel);
   };
 
+  const handleEditCabin = (id: string) => {
+    setEditingAircraftId(id);
+    setCabinEditorOpen(true);
+  };
+
+  const editingAircraft = editingAircraftId 
+    ? aircraft.find(a => a.id === editingAircraftId) 
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
       <AircraftDetails
@@ -130,6 +143,7 @@ const Dashboard: React.FC = () => {
         onMaintenance={performMaintenance}
         onSell={sellAircraft}
         onEdit={handleEditAircraft}
+        onEditCabin={handleEditCabin}
       />
       
       <AnalyticsDrawer
@@ -147,6 +161,23 @@ const Dashboard: React.FC = () => {
         onMaintenance={performMaintenance}
         onSell={sellAircraft}
       />
+
+      {editingAircraft && (
+        <CabinConfigEditor
+          open={cabinEditorOpen}
+          onOpenChange={setCabinEditorOpen}
+          aircraftId={editingAircraft.id}
+          aircraftModel={editingAircraft.model}
+          maxPassengers={editingAircraft.maxPassengers}
+          currentConfig={editingAircraft.cabinConfig || {
+            firstClass: 5,
+            business: 15,
+            premiumEconomy: 20,
+            economy: 60,
+          }}
+          onSave={updateCabinConfig}
+        />
+      )}
       <div className="container mx-auto p-3 sm:p-4 md:p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
           <div className="flex items-center gap-3 sm:gap-4">

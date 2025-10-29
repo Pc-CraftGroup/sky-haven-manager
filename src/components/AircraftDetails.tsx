@@ -24,10 +24,10 @@ import {
   DollarSign,
   Navigation,
   Armchair,
+  Settings,
 } from 'lucide-react';
 import { Aircraft } from '@/hooks/useGameLogic';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import type { CabinConfiguration } from '@/pages/Settings';
+import { CabinVisualizer } from './CabinVisualizer';
 
 interface AircraftDetailsProps {
   aircraft: Aircraft | null;
@@ -37,6 +37,7 @@ interface AircraftDetailsProps {
   onMaintenance?: (id: string) => void;
   onSell?: (id: string) => void;
   onEdit?: (id: string) => void;
+  onEditCabin?: (id: string) => void;
 }
 
 const AircraftDetails: React.FC<AircraftDetailsProps> = ({
@@ -47,18 +48,17 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
   onMaintenance,
   onSell,
   onEdit,
+  onEditCabin,
 }) => {
-  const [cabinConfig] = useLocalStorage<CabinConfiguration>(
-    'cabin-configuration',
-    {
-      firstClass: 5,
-      business: 15,
-      premiumEconomy: 20,
-      economy: 60,
-    }
-  );
-
   if (!aircraft) return null;
+
+  // Use aircraft's individual cabin config or fallback
+  const cabinConfig = aircraft.cabinConfig || {
+    firstClass: 5,
+    business: 15,
+    premiumEconomy: 20,
+    economy: 60,
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -278,40 +278,27 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
 
           {/* Cabin Configuration */}
           <div className="space-y-4">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Armchair className="h-5 w-5 text-primary" />
-              Kabinenkonfiguration
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">First Class</p>
-                <p className="text-lg font-bold">
-                  {Math.round((aircraft.maxPassengers * cabinConfig.firstClass) / 100)} Sitze
-                </p>
-                <p className="text-xs text-muted-foreground">{cabinConfig.firstClass}%</p>
-              </div>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Business</p>
-                <p className="text-lg font-bold">
-                  {Math.round((aircraft.maxPassengers * cabinConfig.business) / 100)} Sitze
-                </p>
-                <p className="text-xs text-muted-foreground">{cabinConfig.business}%</p>
-              </div>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Premium Economy</p>
-                <p className="text-lg font-bold">
-                  {Math.round((aircraft.maxPassengers * cabinConfig.premiumEconomy) / 100)} Sitze
-                </p>
-                <p className="text-xs text-muted-foreground">{cabinConfig.premiumEconomy}%</p>
-              </div>
-              <div className="bg-muted/50 rounded-lg p-3">
-                <p className="text-xs text-muted-foreground mb-1">Economy</p>
-                <p className="text-lg font-bold">
-                  {Math.round((aircraft.maxPassengers * cabinConfig.economy) / 100)} Sitze
-                </p>
-                <p className="text-xs text-muted-foreground">{cabinConfig.economy}%</p>
-              </div>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Armchair className="h-5 w-5 text-primary" />
+                Kabinenkonfiguration
+              </h3>
+              {onEditCabin && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => onEditCabin(aircraft.id)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Bearbeiten
+                </Button>
+              )}
             </div>
+            
+            <CabinVisualizer 
+              cabinConfig={cabinConfig} 
+              maxPassengers={aircraft.maxPassengers}
+            />
           </div>
 
           <Separator />
