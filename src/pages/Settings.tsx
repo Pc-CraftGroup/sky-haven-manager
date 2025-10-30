@@ -8,7 +8,7 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plane, Sparkles, AlertTriangle, Zap } from 'lucide-react';
+import { ArrowLeft, Plane, Sparkles, AlertTriangle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -35,18 +35,11 @@ const airlineSchema = z.object({
 type AirlineSettings = z.infer<typeof airlineSchema>;
 
 export interface CabinConfiguration {
-  firstClass: number; // Percentage 0-100
-  business: number; // Percentage 0-100
-  premiumEconomy: number; // Percentage 0-100
-  economy: number; // Percentage 0-100
+  firstClass: number;
+  business: number;
+  premiumEconomy: number;
+  economy: number;
 }
-
-const defaultCabinConfig: CabinConfiguration = {
-  firstClass: 5,
-  business: 15,
-  premiumEconomy: 20,
-  economy: 60,
-};
 
 const defaultSettings: AirlineSettings = {
   name: 'Skyline Airways',
@@ -92,10 +85,6 @@ const Settings: React.FC = () => {
     'creativity-settings',
     defaultCreativitySettings
   );
-  const [cabinConfig, setCabinConfig] = useLocalStorage<CabinConfiguration>(
-    'cabin-configuration',
-    defaultCabinConfig
-  );
 
   const form = useForm<AirlineSettings>({
     resolver: zodResolver(airlineSchema),
@@ -128,32 +117,6 @@ const Settings: React.FC = () => {
     });
   };
 
-  const handleCabinConfigChange = (cabin: keyof CabinConfiguration, value: number) => {
-    const newConfig = { ...cabinConfig, [cabin]: value };
-    const total = Object.values(newConfig).reduce((sum, val) => sum + val, 0);
-    
-    if (total <= 100) {
-      setCabinConfig(newConfig);
-    }
-  };
-
-  const totalCabinPercentage = Object.values(cabinConfig).reduce((sum, val) => sum + val, 0);
-
-  const saveCabinConfig = () => {
-    if (totalCabinPercentage === 100) {
-      toast({
-        title: 'Kabinenkonfiguration gespeichert',
-        description: 'Die Sitzverteilung wurde aktualisiert.',
-      });
-    } else {
-      toast({
-        title: 'Fehler',
-        description: 'Die Sitzverteilung muss genau 100% ergeben.',
-        variant: 'destructive',
-      });
-    }
-  };
-
   const getDifficultyDescription = (difficulty: string) => {
     switch (difficulty) {
       case 'easy':
@@ -182,14 +145,10 @@ const Settings: React.FC = () => {
         </div>
 
         <Tabs defaultValue="airline" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="airline" className="flex items-center gap-2">
               <Plane className="h-4 w-4" />
               Fluggesellschaft
-            </TabsTrigger>
-            <TabsTrigger value="cabin" className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              Kabinenkonfiguration
             </TabsTrigger>
             <TabsTrigger value="creativity" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
@@ -372,129 +331,6 @@ const Settings: React.FC = () => {
             </div>
           </TabsContent>
 
-          <TabsContent value="cabin" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Kabinenkonfiguration</CardTitle>
-                <CardDescription>
-                  Lege die Sitzverteilung für deine Flugzeuge fest (Gesamt: {totalCabinPercentage}%)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <Label className="flex items-center gap-2">
-                      <span className="text-xl">✈️</span>
-                      First Class
-                    </Label>
-                    <span className="text-sm text-muted-foreground font-semibold">
-                      {cabinConfig.firstClass}%
-                    </span>
-                  </div>
-                  <Slider
-                    value={[cabinConfig.firstClass]}
-                    onValueChange={([value]) => handleCabinConfigChange('firstClass', value)}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Höchster Komfort und Preis, begrenzte Sitzanzahl
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <Label className="flex items-center gap-2">
-                      <span className="text-xl">💼</span>
-                      Business Class
-                    </Label>
-                    <span className="text-sm text-muted-foreground font-semibold">
-                      {cabinConfig.business}%
-                    </span>
-                  </div>
-                  <Slider
-                    value={[cabinConfig.business]}
-                    onValueChange={([value]) => handleCabinConfigChange('business', value)}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Premium-Komfort für Geschäftsreisende
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <Label className="flex items-center gap-2">
-                      <span className="text-xl">⭐</span>
-                      Premium Economy
-                    </Label>
-                    <span className="text-sm text-muted-foreground font-semibold">
-                      {cabinConfig.premiumEconomy}%
-                    </span>
-                  </div>
-                  <Slider
-                    value={[cabinConfig.premiumEconomy]}
-                    onValueChange={([value]) => handleCabinConfigChange('premiumEconomy', value)}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Mehr Beinfreiheit als Economy zu moderatem Aufpreis
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <Label className="flex items-center gap-2">
-                      <span className="text-xl">🪑</span>
-                      Economy Class
-                    </Label>
-                    <span className="text-sm text-muted-foreground font-semibold">
-                      {cabinConfig.economy}%
-                    </span>
-                  </div>
-                  <Slider
-                    value={[cabinConfig.economy]}
-                    onValueChange={([value]) => handleCabinConfigChange('economy', value)}
-                    max={100}
-                    step={1}
-                    className="w-full"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Standard-Sitzplätze, günstigste Option
-                  </p>
-                </div>
-
-                <div className="pt-4">
-                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-                    <span className="font-semibold">Gesamtverteilung:</span>
-                    <span className={`text-lg font-bold ${totalCabinPercentage === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                      {totalCabinPercentage}%
-                    </span>
-                  </div>
-                  {totalCabinPercentage !== 100 && (
-                    <p className="text-sm text-orange-600 mt-2">
-                      Die Gesamtverteilung muss genau 100% ergeben
-                    </p>
-                  )}
-                </div>
-
-                <Button 
-                  onClick={saveCabinConfig} 
-                  className="w-full" 
-                  variant="aviation"
-                  disabled={totalCabinPercentage !== 100}
-                >
-                  Kabinenkonfiguration speichern
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="creativity" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Random Events */}
@@ -614,7 +450,7 @@ const Settings: React.FC = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Zap className="h-5 w-5" />
+                    <Sparkles className="h-5 w-5" />
                     Variabilität & Realismus
                   </CardTitle>
                   <CardDescription>

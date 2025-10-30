@@ -8,12 +8,13 @@ import AircraftPurchase from '@/components/AircraftPurchase';
 import FlightPlanner from '@/components/FlightPlanner';
 import AnalyticsDrawer from '@/components/AnalyticsDrawer';
 import FleetManagementDrawer from '@/components/FleetManagementDrawer';
+import EventSystem from '@/components/EventSystem';
 import { CabinConfigEditor } from '@/components/CabinConfigEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGameLogic, Aircraft } from '@/hooks/useGameLogic';
-import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings } from 'lucide-react';
+import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
@@ -50,6 +51,7 @@ const Dashboard: React.FC = () => {
     startFlight,
     worldAirports,
     updateCabinConfig,
+    updateBudget,
   } = useGameLogic();
 
   const handleAddAircraft = () => {
@@ -175,11 +177,17 @@ const Dashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-4 sm:mb-6 md:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-6 mb-4 sm:mb-6 md:mb-8 h-auto">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
               <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Dashboard</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="events" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                <Zap className="w-4 h-4" />
+                <span className="hidden sm:inline">Events</span>
               </div>
             </TabsTrigger>
             <TabsTrigger value="fleet" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
@@ -214,6 +222,16 @@ const Dashboard: React.FC = () => {
               onAddAircraft={handleAddAircraft}
               onManageFleet={handleManageFleet}
               onViewAnalytics={handleViewAnalytics}
+            />
+          </TabsContent>
+
+          <TabsContent value="events" className="space-y-6">
+            <EventSystem
+              budget={gameState.budget}
+              onBudgetChange={updateBudget}
+              totalFlights={gameState.totalRoutes}
+              totalAircraft={aircraft.length}
+              totalRevenue={gameState.totalRevenue}
             />
           </TabsContent>
 

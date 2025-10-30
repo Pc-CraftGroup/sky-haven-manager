@@ -584,6 +584,14 @@ export function useGameLogic() {
     );
   }, [setAircraft]);
 
+  const updateBudget = useCallback((amount: number) => {
+    setGameState(current => ({
+      ...current,
+      budget: current.budget + amount,
+      totalRevenue: amount > 0 ? current.totalRevenue + amount : current.totalRevenue,
+    }));
+  }, [setGameState]);
+
   return {
     aircraft,
     gameState,
@@ -598,5 +606,6 @@ export function useGameLogic() {
     setAircraft,
     setGameState,
     updateCabinConfig,
+    updateBudget,
   };
 }
