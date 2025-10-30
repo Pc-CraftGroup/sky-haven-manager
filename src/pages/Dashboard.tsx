@@ -24,6 +24,7 @@ const Dashboard: React.FC = () => {
   const [fleetManagementOpen, setFleetManagementOpen] = useState(false);
   const [cabinEditorOpen, setCabinEditorOpen] = useState(false);
   const [editingAircraftId, setEditingAircraftId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
   const navigate = useNavigate();
   const [airlineSettings] = useLocalStorage<{
@@ -52,7 +53,7 @@ const Dashboard: React.FC = () => {
   } = useGameLogic();
 
   const handleAddAircraft = () => {
-    // Switch to purchase tab (already handled in FleetDashboard button)
+    setActiveTab('purchase');
   };
 
   const handleManageFleet = () => {
@@ -77,47 +78,12 @@ const Dashboard: React.FC = () => {
     });
   };
 
-  const handleAircraftEdit = (id: string) => {
-    const plane = aircraft.find(a => a.id === id);
-    if (!plane) return;
-
-    const action = prompt(`Was möchtest du mit ${plane.registration} machen?\n1. Tanken\n2. Wartung\n3. Verkaufen\n\nGib 1, 2 oder 3 ein:`);
-    
-    switch (action) {
-      case '1':
-        refuelAircraft(id);
-        break;
-      case '2':
-        performMaintenance(id);
-        break;
-      case '3':
-        if (confirm(`Möchtest du ${plane.registration} wirklich verkaufen?`)) {
-          sellAircraft(id);
-        }
-        break;
-      default:
-        toast({
-          title: "Ungültige Auswahl",
-          description: "Bitte wähle eine gültige Option (1, 2 oder 3).",
-          variant: "destructive",
-        });
-    }
-  };
-
   const handleAircraftView = (id: string) => {
     const plane = aircraft.find(a => a.id === id);
     if (plane) {
       setSelectedAircraft(plane);
       setDetailsOpen(true);
     }
-  };
-
-  const handleEditAircraft = (id: string) => {
-    toast({
-      title: "Flugzeug bearbeiten",
-      description: "Bearbeitungsmodus öffnet sich...",
-    });
-    // TODO: Implement edit functionality
   };
 
   const handlePurchaseAircraft = (aircraftModel: any) => {
@@ -142,7 +108,6 @@ const Dashboard: React.FC = () => {
         onRefuel={refuelAircraft}
         onMaintenance={performMaintenance}
         onSell={sellAircraft}
-        onEdit={handleEditAircraft}
         onEditCabin={handleEditCabin}
       />
       
@@ -209,7 +174,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="dashboard" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-4 sm:mb-6 md:mb-8 h-auto">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
               <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
@@ -267,7 +232,7 @@ const Dashboard: React.FC = () => {
                   <AircraftCard
                     key={plane.id}
                     aircraft={plane}
-                    onEdit={handleAircraftEdit}
+                    onEdit={handleAircraftView}
                     onView={handleAircraftView}
                   />
                 );

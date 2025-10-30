@@ -36,7 +36,6 @@ interface AircraftDetailsProps {
   onRefuel?: (id: string) => void;
   onMaintenance?: (id: string) => void;
   onSell?: (id: string) => void;
-  onEdit?: (id: string) => void;
   onEditCabin?: (id: string) => void;
 }
 
@@ -47,7 +46,6 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
   onRefuel,
   onMaintenance,
   onSell,
-  onEdit,
   onEditCabin,
 }) => {
   if (!aircraft) return null;
@@ -376,16 +374,6 @@ const AircraftDetails: React.FC<AircraftDetailsProps> = ({
 
           {/* Action Buttons */}
           <div className="space-y-2 pt-4">
-            {onEdit && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => onEdit(aircraft.id)}
-              >
-                <Wrench className="h-4 w-4 mr-2" />
-                Flugzeug bearbeiten
-              </Button>
-            )}
             {onRefuel && aircraft.fuelLevel < 100 && (
               <Button
                 variant="aviation"
