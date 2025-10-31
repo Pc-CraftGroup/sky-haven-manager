@@ -155,6 +155,28 @@ export function useGameLogic() {
   const [aircraft, setAircraft] = useLocalStorage<Aircraft[]>('aviation-aircraft', []);
   const [gameState, setGameState] = useLocalStorage<GameState>('aviation-gamestate', initialGameState);
 
+  // Calculate offline progress on mount
+  useEffect(() => {
+    const now = new Date();
+    const lastUpdate = new Date(gameState.lastUpdateDate);
+    
+    if (!isNaN(lastUpdate.getTime())) {
+      const timeDiff = now.getTime() - lastUpdate.getTime();
+      const minutesPassed = Math.floor(timeDiff / (1000 * 60));
+
+      // Process offline time if more than 5 minutes passed
+      if (minutesPassed >= 5) {
+        console.log(`Processing ${minutesPassed} minutes of offline progress`);
+        updateGameTick(minutesPassed);
+        
+        toast({
+          title: "Willkommen zurück!",
+          description: `${Math.floor(minutesPassed / 60)}h ${minutesPassed % 60}m sind vergangen.`,
+        });
+      }
+    }
+  }, []); // Only run once on mount
+
   // Game tick - runs every minute to simulate time passing
   useEffect(() => {
     const gameInterval = setInterval(() => {
@@ -228,6 +250,12 @@ export function useGameLogic() {
   }, [setAircraft]);
 
   const updateGameTick = useCallback((minutesPassed: number) => {
+    // Update last update time
+    setGameState(current => ({
+      ...current,
+      lastUpdateDate: new Date().toISOString(),
+    }));
+
     setAircraft(currentAircraft => {
       const updatedAircraft = currentAircraft.map(plane => {
         if ((plane.status === 'in-flight' || plane.status === 'delayed') && plane.currentRoute) {
@@ -286,7 +314,17 @@ export function useGameLogic() {
           
           // Normal flight progression for in-flight aircraft
           if (plane.status === 'in-flight') {
-            const progressIncrement = (minutesPassed / plane.currentRoute.duration) * 100;
+            // Adjust speed based on difficulty from creativity settings
+            const creativitySettings = JSON.parse(localStorage.getItem('creativity-settings') || '{"difficulty":"normal"}');
+            const difficulty = creativitySettings.difficulty;
+            const difficultyMultiplier = 
+              difficulty === 'easy' ? 1.5 : 
+              difficulty === 'hard' ? 0.75 : 
+              difficulty === 'realistic' ? 0.6 : 
+              1; // normal
+            const effectiveDuration = plane.currentRoute.duration / difficultyMultiplier;
+            
+            const progressIncrement = (minutesPassed / effectiveDuration) * 100;
             const newProgress = Math.min(100, (plane.currentRoute.progress || 0) + progressIncrement);
             
             // Calculate new position based on progress

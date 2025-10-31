@@ -183,13 +183,13 @@ const EventSystem: React.FC<EventSystemProps> = ({
     setDailyChallenges(challenges);
   }, []);
 
-  // Generate random events
+  // Generate random events - now every 2-4 hours
   useEffect(() => {
     const eventInterval = setInterval(() => {
-      if (Math.random() < 0.3) { // 30% chance every interval
+      if (Math.random() < 0.5) { // 50% chance every interval
         generateRandomEvent();
       }
-    }, 60000); // Check every minute
+    }, 2 * 60 * 60 * 1000); // Check every 2 hours
 
     return () => clearInterval(eventInterval);
   }, []);
