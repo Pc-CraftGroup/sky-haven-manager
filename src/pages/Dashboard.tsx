@@ -10,12 +10,13 @@ import AnalyticsDrawer from '@/components/AnalyticsDrawer';
 import FleetManagementDrawer from '@/components/FleetManagementDrawer';
 import EventSystem from '@/components/EventSystem';
 import AIAdvisor from '@/components/AIAdvisor';
+import WorldCrisisSystem from '@/components/WorldCrisisSystem';
 import { CabinConfigEditor } from '@/components/CabinConfigEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGameLogic, Aircraft } from '@/hooks/useGameLogic';
-import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings, Zap, Bot } from 'lucide-react';
+import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings, Zap, Bot, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 
@@ -178,11 +179,17 @@ const Dashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7 mb-4 sm:mb-6 md:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-8 mb-4 sm:mb-6 md:mb-8 h-auto">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
               <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Dashboard</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="crisis" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="hidden sm:inline">Krisen</span>
               </div>
             </TabsTrigger>
             <TabsTrigger value="advisor" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
@@ -229,6 +236,16 @@ const Dashboard: React.FC = () => {
               onAddAircraft={handleAddAircraft}
               onManageFleet={handleManageFleet}
               onViewAnalytics={handleViewAnalytics}
+            />
+          </TabsContent>
+
+          <TabsContent value="crisis" className="space-y-6">
+            <WorldCrisisSystem
+              budget={gameState.budget}
+              onBudgetChange={updateBudget}
+              onCrisisImpact={(impact) => {
+                console.log('Crisis impact:', impact);
+              }}
             />
           </TabsContent>
 
