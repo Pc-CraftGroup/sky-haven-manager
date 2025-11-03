@@ -14,10 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      active_flights: {
+        Row: {
+          aircraft_model: string
+          estimated_arrival: string | null
+          from_airport: string
+          id: string
+          progress: number
+          started_at: string
+          status: string
+          to_airport: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          aircraft_model: string
+          estimated_arrival?: string | null
+          from_airport: string
+          id?: string
+          progress?: number
+          started_at?: string
+          status: string
+          to_airport: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          aircraft_model?: string
+          estimated_arrival?: string | null
+          from_airport?: string
+          id?: string
+          progress?: number
+          started_at?: string
+          status?: string
+          to_airport?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      game_states: {
+        Row: {
+          fleet: Json
+          id: string
+          last_updated: string
+          money: number
+          reputation: number
+          total_flights: number
+          total_revenue: number
+          user_id: string
+        }
+        Insert: {
+          fleet?: Json
+          id?: string
+          last_updated?: string
+          money?: number
+          reputation?: number
+          total_flights?: number
+          total_revenue?: number
+          user_id: string
+        }
+        Update: {
+          fleet?: Json
+          id?: string
+          last_updated?: string
+          money?: number
+          reputation?: number
+          total_flights?: number
+          total_revenue?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      leaderboard: {
+        Row: {
+          avatar_url: string | null
+          fleet_size: number | null
+          last_updated: string | null
+          money: number | null
+          reputation: number | null
+          total_flights: number | null
+          total_revenue: number | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
