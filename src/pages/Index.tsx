@@ -1,12 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plane, Globe, Users, BarChart3, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import aviationHero from '@/assets/aviation-hero.jpg';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check authentication status
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleStartClick = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/auth');
+    }
+  };
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Lädt...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,11 +59,11 @@ const Index = () => {
           <Button 
             size="lg" 
             variant="aviation"
-            onClick={() => navigate('/dashboard')}
+            onClick={handleStartClick}
             className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto"
           >
             <Plane className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            Simulator starten
+            {isAuthenticated ? 'Simulator starten' : 'Jetzt anmelden'}
             <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
           </Button>
         </div>
@@ -117,11 +146,11 @@ const Index = () => {
           <Button 
             size="lg" 
             variant="secondary"
-            onClick={() => navigate('/dashboard')}
+            onClick={handleStartClick}
             className="text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 h-auto bg-white text-primary hover:bg-white/90"
           >
             <Plane className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            Jetzt spielen
+            {isAuthenticated ? 'Jetzt spielen' : 'Kostenlos registrieren'}
           </Button>
         </div>
       </section>

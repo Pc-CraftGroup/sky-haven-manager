@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FleetDashboard from '@/components/FleetDashboard';
 import AviationMap from '@/components/AviationMap';
@@ -11,14 +11,17 @@ import FleetManagementDrawer from '@/components/FleetManagementDrawer';
 import EventSystem from '@/components/EventSystem';
 import AIAdvisor from '@/components/AIAdvisor';
 import WorldCrisisSystem from '@/components/WorldCrisisSystem';
+import Leaderboard from '@/components/Leaderboard';
+import MultiplayerFlights from '@/components/MultiplayerFlights';
 import { CabinConfigEditor } from '@/components/CabinConfigEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGameLogic, Aircraft } from '@/hooks/useGameLogic';
-import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings, Zap, Bot, AlertTriangle } from 'lucide-react';
+import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings, Zap, Bot, AlertTriangle, Trophy, Users, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard: React.FC = () => {
   const [selectedAircraft, setSelectedAircraft] = useState<Aircraft | null>(null);
@@ -30,6 +33,28 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check authentication
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
   const [airlineSettings] = useLocalStorage<{
     name: string;
     logoText: string;
@@ -167,6 +192,10 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button onClick={handleLogout} variant="outline" size="sm" className="flex-1 sm:flex-none">
+              <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline ml-1">Abmelden</span>
+            </Button>
             <Button onClick={() => navigate('/settings')} variant="outline" size="sm" className="flex-1 sm:flex-none">
               <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline ml-1">Einstellungen</span>
@@ -179,11 +208,23 @@ const Dashboard: React.FC = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-8 mb-4 sm:mb-6 md:mb-8 h-auto">
+          <TabsList className="grid w-full grid-cols-10 mb-4 sm:mb-6 md:mb-8 h-auto">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
               <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Dashboard</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="leaderboard" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                <Trophy className="w-4 h-4" />
+                <span className="hidden sm:inline">Rangliste</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="multiplayer" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Live</span>
               </div>
             </TabsTrigger>
             <TabsTrigger value="crisis" className="text-xs sm:text-sm px-2 py-2 sm:py-2.5">
@@ -237,6 +278,14 @@ const Dashboard: React.FC = () => {
               onManageFleet={handleManageFleet}
               onViewAnalytics={handleViewAnalytics}
             />
+          </TabsContent>
+
+          <TabsContent value="leaderboard" className="space-y-6">
+            <Leaderboard />
+          </TabsContent>
+
+          <TabsContent value="multiplayer" className="space-y-6">
+            <MultiplayerFlights />
           </TabsContent>
 
           <TabsContent value="crisis" className="space-y-6">
