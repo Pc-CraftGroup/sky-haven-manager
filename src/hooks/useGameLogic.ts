@@ -318,7 +318,7 @@ export function useGameLogic() {
             const creativitySettings = JSON.parse(localStorage.getItem('creativity-settings') || '{"difficulty":"normal"}');
             const difficulty = creativitySettings.difficulty;
             const difficultyMultiplier = 
-              difficulty === 'easy' ? 1.5 : 
+              difficulty === 'easy' ? 10 : 
               difficulty === 'hard' ? 0.75 : 
               difficulty === 'realistic' ? 0.6 : 
               1; // normal
