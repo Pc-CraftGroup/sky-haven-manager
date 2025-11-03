@@ -314,15 +314,10 @@ export function useGameLogic() {
           
           // Normal flight progression for in-flight aircraft
           if (plane.status === 'in-flight') {
-            // Adjust speed based on difficulty from creativity settings
-            const creativitySettings = JSON.parse(localStorage.getItem('creativity-settings') || '{"difficulty":"normal"}');
-            const difficulty = creativitySettings.difficulty;
-            const difficultyMultiplier = 
-              difficulty === 'easy' ? 10 : 
-              difficulty === 'hard' ? 0.75 : 
-              difficulty === 'realistic' ? 0.6 : 
-              1; // normal
-            const effectiveDuration = plane.currentRoute.duration / difficultyMultiplier;
+            // Adjust speed based on speed multiplier from creativity settings
+            const creativitySettings = JSON.parse(localStorage.getItem('creativity-settings') || '{"flightSpeedMultiplier":1}');
+            const speedMultiplier = creativitySettings.flightSpeedMultiplier || 1;
+            const effectiveDuration = plane.currentRoute.duration / speedMultiplier;
             
             const progressIncrement = (minutesPassed / effectiveDuration) * 100;
             const newProgress = Math.min(100, (plane.currentRoute.progress || 0) + progressIncrement);

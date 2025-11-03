@@ -60,6 +60,7 @@ export interface CreativitySettings {
   fuelConsumptionVariability: number; // 0-100
   passengerDemandVariability: number; // 0-100
   difficulty: 'easy' | 'normal' | 'hard' | 'realistic';
+  flightSpeedMultiplier: number; // 0.1-100
 }
 
 const defaultCreativitySettings: CreativitySettings = {
@@ -72,6 +73,7 @@ const defaultCreativitySettings: CreativitySettings = {
   fuelConsumptionVariability: 20,
   passengerDemandVariability: 40,
   difficulty: 'normal',
+  flightSpeedMultiplier: 1,
 };
 
 const Settings: React.FC = () => {
@@ -518,6 +520,28 @@ const Settings: React.FC = () => {
                     />
                     <p className="text-xs text-muted-foreground">
                       Schwankungen der Ticketnachfrage
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Fluggeschwindigkeit</Label>
+                      <span className="text-sm text-muted-foreground">
+                        {creativitySettings.flightSpeedMultiplier}x
+                      </span>
+                    </div>
+                    <Slider
+                      value={[creativitySettings.flightSpeedMultiplier]}
+                      onValueChange={([value]) =>
+                        handleCreativityChange('flightSpeedMultiplier', value)
+                      }
+                      min={0.1}
+                      max={100}
+                      step={0.1}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Wie schnell fliegen deine Flugzeuge (0.1x = sehr langsam, 100x = extrem schnell)
                     </p>
                   </div>
 
