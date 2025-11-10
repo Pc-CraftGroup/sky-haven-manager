@@ -17,7 +17,8 @@ import { CabinConfigEditor } from '@/components/CabinConfigEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useGameLogic, Aircraft } from '@/hooks/useGameLogic';
+import { Aircraft } from '@/hooks/useGameLogic';
+import { useOnlineGameLogic } from '@/hooks/useOnlineGameLogic';
 import { Plane, Map, ShoppingCart, BarChart3, RotateCcw, Calendar, Settings, Zap, Bot, AlertTriangle, Trophy, Users, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -79,7 +80,7 @@ const Dashboard: React.FC = () => {
     worldAirports,
     updateCabinConfig,
     updateBudget,
-  } = useGameLogic();
+  } = useOnlineGameLogic();
 
   const handleAddAircraft = () => {
     setActiveTab('purchase');
