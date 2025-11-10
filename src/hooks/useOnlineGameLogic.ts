@@ -157,21 +157,29 @@ export const useOnlineGameLogic = () => {
 
   // Get user session
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
+    let isMounted = true;
+
+    const initUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && isMounted) {
         setUserId(session.user.id);
-        fetchUserData(session.user.id);
+        await fetchUserData(session.user.id);
+      }
+    };
+
+    initUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session && isMounted) {
+        setUserId(session.user.id);
+        await fetchUserData(session.user.id);
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setUserId(session.user.id);
-        fetchUserData(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch user data
@@ -182,18 +190,18 @@ export const useOnlineGameLogic = () => {
         .from('profiles')
         .select('username')
         .eq('id', uid)
-        .single();
+        .maybeSingle();
 
       if (profile) {
         setUsername(profile.username);
       }
 
       // Get or create game state
-      const { data: existingState } = await supabase
+      const { data: existingState, error } = await supabase
         .from('game_states')
         .select('*')
         .eq('user_id', uid)
-        .single();
+        .maybeSingle();
 
       if (existingState) {
         setGameState({
@@ -206,9 +214,9 @@ export const useOnlineGameLogic = () => {
         });
         const fleetData = existingState.fleet as any;
         setAircraft(Array.isArray(fleetData) ? fleetData : []);
-      } else {
-        // Create initial game state
-        await supabase.from('game_states').insert({
+      } else if (!error) {
+        // Create initial game state only if no error and no data
+        const { error: insertError } = await supabase.from('game_states').insert({
           user_id: uid,
           money: 1000000,
           reputation: 50,
@@ -216,6 +224,19 @@ export const useOnlineGameLogic = () => {
           total_flights: 0,
           total_revenue: 0,
         });
+        
+        if (!insertError) {
+          // Set initial state after successful insert
+          setGameState({
+            budget: 1000000,
+            totalRevenue: 0,
+            totalRoutes: 0,
+            gameStartDate: new Date().toISOString(),
+            lastUpdateDate: new Date().toISOString(),
+            reputation: 50,
+          });
+          setAircraft([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -255,7 +276,7 @@ export const useOnlineGameLogic = () => {
           .eq('aircraft_model', plane.model)
           .eq('from_airport', plane.currentRoute.from)
           .eq('to_airport', plane.currentRoute.to)
-          .single();
+          .maybeSingle();
 
         const flightData = {
           user_id: userId,
@@ -291,146 +312,140 @@ export const useOnlineGameLogic = () => {
 
   // Game logic - update every minute
   useEffect(() => {
+    if (!userId || aircraft.length === 0) return;
+
     const updateGameTick = async (minutesPassed: number) => {
-      const updatedAircraft = [...aircraft];
-      let budgetChange = 0;
-      let revenueChange = 0;
-      let reputationChange = 0;
+      setAircraft(currentAircraft => {
+        const updatedAircraft = [...currentAircraft];
+        let budgetChange = 0;
+        let revenueChange = 0;
+        let reputationChange = 0;
 
-      // Get flight speed multiplier from settings
-      const creativitySettings = JSON.parse(
-        localStorage.getItem('creativity-settings') || '{"flightSpeedMultiplier":1}'
-      );
-      const speedMultiplier = creativitySettings.flightSpeedMultiplier || 1;
+        // Get flight speed multiplier from settings
+        const creativitySettings = JSON.parse(
+          localStorage.getItem('creativity-settings') || '{"flightSpeedMultiplier":1}'
+        );
+        const speedMultiplier = creativitySettings.flightSpeedMultiplier || 1;
 
-      updatedAircraft.forEach((plane) => {
-        if ((plane.status === 'in-flight' || plane.status === 'delayed') && plane.currentRoute) {
-          // Random events during flight (only for in-flight aircraft)
-          if (plane.status === 'in-flight') {
-            const randomEvent = Math.random();
+        updatedAircraft.forEach((plane) => {
+          if ((plane.status === 'in-flight' || plane.status === 'delayed') && plane.currentRoute) {
+            // Random events during flight (only for in-flight aircraft)
+            if (plane.status === 'in-flight') {
+              const randomEvent = Math.random();
+              
+              // 2% chance of delay per hour
+              if (randomEvent < 0.02 * (minutesPassed / 60) && !plane.delayReason) {
+                const delayReasons = [
+                  'Schlechtes Wetter',
+                  'Technische Probleme',
+                  'Luftverkehrskontrolle',
+                  'Verspäteter Anschlussflug',
+                  'Crew-Probleme'
+                ];
+                plane.status = 'delayed';
+                plane.delayReason = delayReasons[Math.floor(Math.random() * delayReasons.length)];
+              }
+              
+              // 0.1% chance of crash per hour (very rare) if condition is poor
+              if (randomEvent < 0.001 * (minutesPassed / 60) && plane.condition < 30) {
+                const crashReasons = [
+                  'Schwerer Sturm',
+                  'Technisches Versagen',
+                  'Pilotenfehler',
+                  'Schlechte Wartung'
+                ];
+                
+                reputationChange -= 20;
+                budgetChange += plane.purchasePrice * 0.8; // Insurance payout
+                
+                plane.status = 'crashed';
+                plane.crashReason = crashReasons[Math.floor(Math.random() * crashReasons.length)];
+                plane.currentRoute = undefined;
+                
+                toast({
+                  title: 'Notfall!',
+                  description: `${plane.registration} ist abgestürzt: ${plane.crashReason}`,
+                  variant: 'destructive',
+                });
+                
+                return;
+              }
+            }
             
-            // 2% chance of delay per hour
-            if (randomEvent < 0.02 * (minutesPassed / 60) && !plane.delayReason) {
-              const delayReasons = [
-                'Schlechtes Wetter',
-                'Technische Probleme',
-                'Luftverkehrskontrolle',
-                'Verspäteter Anschlussflug',
-                'Crew-Probleme'
+            // Continue with delayed flights after some time
+            if (plane.status === 'delayed' && Math.random() < 0.3) {
+              plane.status = 'in-flight';
+              plane.delayReason = undefined;
+            }
+            
+            // Normal flight progression for in-flight aircraft
+            if (plane.status === 'in-flight') {
+              const effectiveDuration = plane.currentRoute.duration / speedMultiplier;
+              const progressIncrement = (minutesPassed / effectiveDuration) * 100;
+              const newProgress = Math.min(100, (plane.currentRoute.progress || 0) + progressIncrement);
+
+              // Calculate new position based on progress
+              const fromCoords = plane.currentRoute.fromCoordinates;
+              const toCoords = plane.currentRoute.toCoordinates;
+              const progressRatio = newProgress / 100;
+              
+              const newPosition: [number, number] = [
+                fromCoords[0] + (toCoords[0] - fromCoords[0]) * progressRatio,
+                fromCoords[1] + (toCoords[1] - fromCoords[1]) * progressRatio
               ];
-              plane.status = 'delayed';
-              plane.delayReason = delayReasons[Math.floor(Math.random() * delayReasons.length)];
-            }
-            
-            // 0.1% chance of crash per hour (very rare) if condition is poor
-            if (randomEvent < 0.001 * (minutesPassed / 60) && plane.condition < 30) {
-              const crashReasons = [
-                'Schwerer Sturm',
-                'Technisches Versagen',
-                'Pilotenfehler',
-                'Schlechte Wartung'
-              ];
-              
-              reputationChange -= 20;
-              budgetChange += plane.purchasePrice * 0.8; // Insurance payout
-              
-              plane.status = 'crashed';
-              plane.crashReason = crashReasons[Math.floor(Math.random() * crashReasons.length)];
-              plane.currentRoute = undefined;
-              
-              toast({
-                title: 'Notfall!',
-                description: `${plane.registration} ist abgestürzt: ${plane.crashReason}`,
-                variant: 'destructive',
-              });
-              
-              return;
+
+              plane.currentRoute.progress = newProgress;
+              plane.position = newPosition;
+
+              const fuelConsumption = Math.max(1, plane.passengers / plane.maxPassengers * 2);
+              plane.fuelLevel = Math.max(0, plane.fuelLevel - (fuelConsumption * minutesPassed));
+              plane.totalFlightHours += (minutesPassed / 60);
+              plane.condition = Math.max(0, plane.condition - (0.1 * minutesPassed));
+
+              if (newProgress >= 100) {
+                // Flight completed
+                plane.status = 'idle';
+                plane.location = plane.currentRoute.to;
+                plane.position = toCoords;
+                
+                const revenue = plane.currentRoute.price * plane.passengers;
+                budgetChange += revenue;
+                revenueChange += revenue;
+                
+                toast({
+                  title: 'Flug abgeschlossen!',
+                  description: `${plane.registration} ist in ${plane.currentRoute.to} angekommen. Umsatz: €${revenue.toLocaleString('de-DE')}`,
+                });
+
+                plane.currentRoute = undefined;
+              }
+
+              // Sync to active_flights table
+              syncActiveFlights(plane);
             }
           }
+
+          // Daily operations cost
+          const dailyCost = plane.purchasePrice * 0.001;
+          budgetChange -= (dailyCost * minutesPassed) / (24 * 60);
+        });
+
+        setGameState(currentState => {
+          const newState = {
+            ...currentState,
+            budget: currentState.budget + budgetChange,
+            totalRevenue: currentState.totalRevenue + revenueChange,
+            reputation: Math.max(0, Math.min(100, currentState.reputation + reputationChange)),
+            lastUpdateDate: new Date().toISOString(),
+          };
           
-          // Continue with delayed flights after some time
-          if (plane.status === 'delayed' && Math.random() < 0.3) {
-            plane.status = 'in-flight';
-            plane.delayReason = undefined;
-          }
-          
-          // Normal flight progression for in-flight aircraft
-          if (plane.status === 'in-flight') {
-            const effectiveDuration = plane.currentRoute.duration / speedMultiplier;
-            const progressIncrement = (minutesPassed / effectiveDuration) * 100;
-            const newProgress = Math.min(100, (plane.currentRoute.progress || 0) + progressIncrement);
+          saveGameState(updatedAircraft, newState);
+          return newState;
+        });
 
-            // Calculate new position based on progress
-            const fromCoords = plane.currentRoute.fromCoordinates;
-            const toCoords = plane.currentRoute.toCoordinates;
-            const progressRatio = newProgress / 100;
-            
-            const newPosition: [number, number] = [
-              fromCoords[0] + (toCoords[0] - fromCoords[0]) * progressRatio,
-              fromCoords[1] + (toCoords[1] - fromCoords[1]) * progressRatio
-            ];
-
-            plane.currentRoute.progress = newProgress;
-            plane.position = newPosition;
-
-            const fuelConsumption = Math.max(1, plane.passengers / plane.maxPassengers * 2);
-            plane.fuelLevel = Math.max(0, plane.fuelLevel - (fuelConsumption * minutesPassed));
-            plane.totalFlightHours += (minutesPassed / 60);
-            plane.condition = Math.max(0, plane.condition - (0.1 * minutesPassed));
-
-            if (newProgress >= 100) {
-              // Flight completed
-              plane.status = 'idle';
-              plane.location = plane.currentRoute.to;
-              plane.position = toCoords;
-              
-              const revenue = plane.currentRoute.price * plane.passengers;
-              budgetChange += revenue;
-              revenueChange += revenue;
-              
-              toast({
-                title: 'Flug abgeschlossen!',
-                description: `${plane.registration} ist in ${plane.currentRoute.to} angekommen. Umsatz: €${revenue.toLocaleString('de-DE')}`,
-              });
-
-              plane.currentRoute = undefined;
-            }
-
-            // Sync to active_flights table
-            syncActiveFlights(plane);
-          }
-        }
-
-        // Daily operations cost
-        const dailyCost = plane.purchasePrice * 0.001;
-        budgetChange -= (dailyCost * minutesPassed) / (24 * 60);
+        return updatedAircraft;
       });
-
-      const newGameState = {
-        ...gameState,
-        budget: gameState.budget + budgetChange,
-        totalRevenue: gameState.totalRevenue + revenueChange,
-        reputation: Math.max(0, Math.min(100, gameState.reputation + reputationChange)),
-        lastUpdateDate: new Date().toISOString(),
-      };
-
-      setAircraft(updatedAircraft);
-      setGameState(newGameState);
-      await saveGameState(updatedAircraft, newGameState);
     };
-
-    // Check for offline progress on mount
-    const lastUpdate = new Date(gameState.lastUpdateDate);
-    const now = new Date();
-    const minutesPassed = Math.floor((now.getTime() - lastUpdate.getTime()) / 60000);
-
-    if (minutesPassed >= 5) {
-      updateGameTick(minutesPassed);
-      toast({
-        title: 'Willkommen zurück!',
-        description: `${Math.floor(minutesPassed / 60)}h ${minutesPassed % 60}m sind vergangen.`,
-      });
-    }
 
     // Update every minute
     const interval = setInterval(() => {
@@ -478,68 +493,80 @@ export const useOnlineGameLogic = () => {
       clearInterval(interval);
       clearInterval(movementInterval);
     };
-  }, [aircraft, gameState, toast, saveGameState, syncActiveFlights]);
+  }, [userId, toast, saveGameState, syncActiveFlights]);
 
   const purchaseAircraft = useCallback(
     async (aircraftModel: AircraftModel) => {
-      if (gameState.budget < aircraftModel.price) {
-        toast({
-          title: 'Nicht genug Budget',
-          description: 'Du hast nicht genug Geld für dieses Flugzeug.',
-          variant: 'destructive',
-        });
-        return false;
-      }
+      let canPurchase = false;
+      let newAircraftObj: Aircraft | null = null;
 
-      const randomAirport = worldAirports[Math.floor(Math.random() * worldAirports.length)];
-      
-      // Get default cabin config from localStorage or use fallback
-      const savedCabinConfig = localStorage.getItem('cabinConfiguration');
-      const defaultCabinConfig: CabinConfiguration = savedCabinConfig 
-        ? JSON.parse(savedCabinConfig)
-        : { firstClass: 5, business: 15, premiumEconomy: 20, economy: 60 };
+      setGameState(currentState => {
+        if (currentState.budget < aircraftModel.price) {
+          toast({
+            title: 'Nicht genug Budget',
+            description: 'Du hast nicht genug Geld für dieses Flugzeug.',
+            variant: 'destructive',
+          });
+          return currentState;
+        }
 
-      const newAircraft: Aircraft = {
-        id: `aircraft-${Date.now()}`,
-        model: `${aircraftModel.manufacturer} ${aircraftModel.model}`,
-        registration: `D-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-        airline: 'Meine Airline',
-        status: 'idle',
-        location: randomAirport.name,
-        passengers: Math.floor(Math.random() * aircraftModel.maxPassengers * 0.8),
-        maxPassengers: aircraftModel.maxPassengers,
-        fuelLevel: 100,
-        nextMaintenance: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('de-DE'),
-        totalFlightHours: 0,
-        lastService: new Date().toLocaleDateString('de-DE'),
-        position: randomAirport.coordinates as [number, number],
-        purchasePrice: aircraftModel.price,
-        dailyRevenue: aircraftModel.maxPassengers * 200,
-        condition: 100,
-        range: aircraftModel.range,
-        image: aircraftModel.image,
-        cabinConfig: defaultCabinConfig,
-      };
+        canPurchase = true;
+        
+        const randomAirport = worldAirports[Math.floor(Math.random() * worldAirports.length)];
+        
+        // Get default cabin config from localStorage or use fallback
+        const savedCabinConfig = localStorage.getItem('cabinConfiguration');
+        const defaultCabinConfig: CabinConfiguration = savedCabinConfig 
+          ? JSON.parse(savedCabinConfig)
+          : { firstClass: 5, business: 15, premiumEconomy: 20, economy: 60 };
 
-      const updatedAircraft = [...aircraft, newAircraft];
-      const newGameState = {
-        ...gameState,
-        budget: gameState.budget - aircraftModel.price,
-        totalRoutes: gameState.totalRoutes + 1,
-      };
+        newAircraftObj = {
+          id: `aircraft-${Date.now()}`,
+          model: `${aircraftModel.manufacturer} ${aircraftModel.model}`,
+          registration: `D-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+          airline: 'Meine Airline',
+          status: 'idle',
+          location: randomAirport.name,
+          passengers: Math.floor(Math.random() * aircraftModel.maxPassengers * 0.8),
+          maxPassengers: aircraftModel.maxPassengers,
+          fuelLevel: 100,
+          nextMaintenance: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('de-DE'),
+          totalFlightHours: 0,
+          lastService: new Date().toLocaleDateString('de-DE'),
+          position: randomAirport.coordinates as [number, number],
+          purchasePrice: aircraftModel.price,
+          dailyRevenue: aircraftModel.maxPassengers * 200,
+          condition: 100,
+          range: aircraftModel.range,
+          image: aircraftModel.image,
+          cabinConfig: defaultCabinConfig,
+        };
 
-      setAircraft(updatedAircraft);
-      setGameState(newGameState);
-      await saveGameState(updatedAircraft, newGameState);
+        const newState = {
+          ...currentState,
+          budget: currentState.budget - aircraftModel.price,
+          totalRoutes: currentState.totalRoutes + 1,
+        };
 
-      toast({
-        title: 'Flugzeug gekauft!',
-        description: `${newAircraft.model} (${newAircraft.registration}) wurde erfolgreich gekauft.`,
+        if (newAircraftObj) {
+          setAircraft(currentAircraft => {
+            const updatedAircraft = [...currentAircraft, newAircraftObj!];
+            saveGameState(updatedAircraft, newState);
+            return updatedAircraft;
+          });
+
+          toast({
+            title: 'Flugzeug gekauft!',
+            description: `${newAircraftObj.model} (${newAircraftObj.registration}) wurde erfolgreich gekauft.`,
+          });
+        }
+
+        return newState;
       });
 
-      return true;
+      return canPurchase;
     },
-    [aircraft, gameState, toast, saveGameState]
+    [toast, saveGameState]
   );
 
   const startFlight = useCallback(
@@ -555,159 +582,213 @@ export const useOnlineGameLogic = () => {
         price: number;
       }
     ) => {
-      const updatedAircraft = aircraft.map((plane) => {
-        if (plane.id === aircraftId) {
-          return {
-            ...plane,
-            status: 'in-flight' as const,
-            currentRoute: {
-              id: `route-${Date.now()}`,
-              ...route,
+      setAircraft(currentAircraft => {
+        const updatedAircraft = currentAircraft.map((plane) => {
+          if (plane.id === aircraftId) {
+            return {
+              ...plane,
               status: 'in-flight' as const,
-              startTime: new Date().toISOString(),
-              arrivalTime: new Date(Date.now() + route.duration * 60000).toISOString(),
-              progress: 0,
-            },
+              currentRoute: {
+                id: `route-${Date.now()}`,
+                ...route,
+                status: 'in-flight' as const,
+                startTime: new Date().toISOString(),
+                arrivalTime: new Date(Date.now() + route.duration * 60000).toISOString(),
+                progress: 0,
+              },
+            };
+          }
+          return plane;
+        });
+
+        setGameState(currentState => {
+          const newState = {
+            ...currentState,
+            totalRoutes: currentState.totalRoutes + 1,
           };
+
+          saveGameState(updatedAircraft, newState);
+          return newState;
+        });
+
+        // Sync to active flights
+        const plane = updatedAircraft.find((p) => p.id === aircraftId);
+        if (plane) {
+          syncActiveFlights(plane);
         }
-        return plane;
-      });
 
-      const newGameState = {
-        ...gameState,
-        totalRoutes: gameState.totalRoutes + 1,
-      };
+        toast({
+          title: 'Flug gestartet!',
+          description: `Flug von ${route.from} nach ${route.to} hat begonnen.`,
+        });
 
-      setAircraft(updatedAircraft);
-      setGameState(newGameState);
-      await saveGameState(updatedAircraft, newGameState);
-
-      // Sync to active flights
-      const plane = updatedAircraft.find((p) => p.id === aircraftId);
-      if (plane) {
-        await syncActiveFlights(plane);
-      }
-
-      toast({
-        title: 'Flug gestartet!',
-        description: `Flug von ${route.from} nach ${route.to} hat begonnen.`,
+        return updatedAircraft;
       });
     },
-    [aircraft, gameState, toast, saveGameState, syncActiveFlights]
+    [toast, saveGameState, syncActiveFlights]
   );
 
   const refuelAircraft = useCallback(async (aircraftId: string) => {
-    const plane = aircraft.find(a => a.id === aircraftId);
-    if (!plane) return;
+    setAircraft(currentAircraft => {
+      const plane = currentAircraft.find(a => a.id === aircraftId);
+      if (!plane) return currentAircraft;
 
-    const fuelNeeded = 100 - plane.fuelLevel;
-    const fuelCost = fuelNeeded * 100;
+      const fuelNeeded = 100 - plane.fuelLevel;
+      const fuelCost = fuelNeeded * 100;
 
-    if (gameState.budget < fuelCost) {
-      toast({
-        title: 'Nicht genug Budget',
-        description: 'Du hast nicht genug Geld zum Tanken.',
-        variant: 'destructive',
+      let canRefuel = false;
+
+      setGameState(currentState => {
+        if (currentState.budget < fuelCost) {
+          toast({
+            title: 'Nicht genug Budget',
+            description: 'Du hast nicht genug Geld zum Tanken.',
+            variant: 'destructive',
+          });
+          return currentState;
+        }
+
+        canRefuel = true;
+
+        const newState = {
+          ...currentState,
+          budget: currentState.budget - fuelCost,
+        };
+
+        const updatedAircraft = currentAircraft.map(a =>
+          a.id === aircraftId ? { ...a, fuelLevel: 100 } : a
+        );
+
+        saveGameState(updatedAircraft, newState);
+
+        toast({
+          title: 'Betankung abgeschlossen',
+          description: `${plane.registration} wurde für €${fuelCost.toLocaleString('de-DE')} betankt.`,
+        });
+
+        return newState;
       });
-      return;
-    }
 
-    const updatedAircraft = aircraft.map(a =>
-      a.id === aircraftId ? { ...a, fuelLevel: 100 } : a
-    );
+      if (canRefuel) {
+        return currentAircraft.map(a =>
+          a.id === aircraftId ? { ...a, fuelLevel: 100 } : a
+        );
+      }
 
-    const newGameState = {
-      ...gameState,
-      budget: gameState.budget - fuelCost,
-    };
-
-    setAircraft(updatedAircraft);
-    setGameState(newGameState);
-    await saveGameState(updatedAircraft, newGameState);
-
-    toast({
-      title: 'Betankung abgeschlossen',
-      description: `${plane.registration} wurde für €${fuelCost.toLocaleString('de-DE')} betankt.`,
+      return currentAircraft;
     });
-  }, [aircraft, gameState, toast, saveGameState]);
+  }, [toast, saveGameState]);
 
   const performMaintenance = useCallback(async (aircraftId: string) => {
-    const plane = aircraft.find(a => a.id === aircraftId);
-    if (!plane) return;
+    setAircraft(currentAircraft => {
+      const plane = currentAircraft.find(a => a.id === aircraftId);
+      if (!plane) return currentAircraft;
 
-    const maintenanceCost = plane.purchasePrice * 0.02;
+      const maintenanceCost = plane.purchasePrice * 0.02;
+      let canMaintain = false;
 
-    if (gameState.budget < maintenanceCost) {
-      toast({
-        title: 'Nicht genug Budget',
-        description: 'Du hast nicht genug Geld für die Wartung.',
-        variant: 'destructive',
+      setGameState(currentState => {
+        if (currentState.budget < maintenanceCost) {
+          toast({
+            title: 'Nicht genug Budget',
+            description: 'Du hast nicht genug Geld für die Wartung.',
+            variant: 'destructive',
+          });
+          return currentState;
+        }
+
+        canMaintain = true;
+
+        const newState = {
+          ...currentState,
+          budget: currentState.budget - maintenanceCost,
+        };
+
+        const updatedAircraft = currentAircraft.map(a =>
+          a.id === aircraftId
+            ? {
+                ...a,
+                status: 'maintenance' as const,
+                condition: 100,
+                lastService: new Date().toLocaleDateString('de-DE'),
+                nextMaintenance: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('de-DE'),
+              }
+            : a
+        );
+
+        saveGameState(updatedAircraft, newState);
+
+        toast({
+          title: 'Wartung gestartet',
+          description: `${plane.registration} ist jetzt in der Wartung für €${maintenanceCost.toLocaleString('de-DE')}.`,
+        });
+
+        setTimeout(() => {
+          setAircraft(current => {
+            const completed = current.map(a =>
+              a.id === aircraftId ? { ...a, status: 'idle' as const } : a
+            );
+            saveGameState(completed, newState);
+
+            toast({
+              title: 'Wartung abgeschlossen',
+              description: `${plane.registration} ist wieder einsatzbereit.`,
+            });
+
+            return completed;
+          });
+        }, 30000);
+
+        return newState;
       });
-      return;
-    }
 
-    const updatedAircraft = aircraft.map(a =>
-      a.id === aircraftId
-        ? {
-            ...a,
-            status: 'maintenance' as const,
-            condition: 100,
-            lastService: new Date().toLocaleDateString('de-DE'),
-            nextMaintenance: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('de-DE'),
-          }
-        : a
-    );
+      if (canMaintain) {
+        return currentAircraft.map(a =>
+          a.id === aircraftId
+            ? {
+                ...a,
+                status: 'maintenance' as const,
+                condition: 100,
+                lastService: new Date().toLocaleDateString('de-DE'),
+                nextMaintenance: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('de-DE'),
+              }
+            : a
+        );
+      }
 
-    const newGameState = {
-      ...gameState,
-      budget: gameState.budget - maintenanceCost,
-    };
-
-    setAircraft(updatedAircraft);
-    setGameState(newGameState);
-    await saveGameState(updatedAircraft, newGameState);
-
-    toast({
-      title: 'Wartung gestartet',
-      description: `${plane.registration} ist jetzt in der Wartung für €${maintenanceCost.toLocaleString('de-DE')}.`,
+      return currentAircraft;
     });
-
-    setTimeout(async () => {
-      const completedAircraft = updatedAircraft.map(a =>
-        a.id === aircraftId ? { ...a, status: 'idle' as const } : a
-      );
-      setAircraft(completedAircraft);
-      await saveGameState(completedAircraft, newGameState);
-
-      toast({
-        title: 'Wartung abgeschlossen',
-        description: `${plane.registration} ist wieder einsatzbereit.`,
-      });
-    }, 30000);
-  }, [aircraft, gameState, toast, saveGameState]);
+  }, [toast, saveGameState]);
 
   const sellAircraft = useCallback(async (aircraftId: string) => {
-    const plane = aircraft.find(a => a.id === aircraftId);
-    if (!plane) return;
+    setAircraft(currentAircraft => {
+      const plane = currentAircraft.find(a => a.id === aircraftId);
+      if (!plane) return currentAircraft;
 
-    const sellPrice = Math.floor(plane.purchasePrice * (0.6 + (plane.condition / 100) * 0.2));
+      const sellPrice = Math.floor(plane.purchasePrice * (0.6 + (plane.condition / 100) * 0.2));
 
-    const updatedAircraft = aircraft.filter(a => a.id !== aircraftId);
-    const newGameState = {
-      ...gameState,
-      budget: gameState.budget + sellPrice,
-      totalRoutes: Math.max(0, gameState.totalRoutes - 1),
-    };
+      const updatedAircraft = currentAircraft.filter(a => a.id !== aircraftId);
 
-    setAircraft(updatedAircraft);
-    setGameState(newGameState);
-    await saveGameState(updatedAircraft, newGameState);
+      setGameState(currentState => {
+        const newState = {
+          ...currentState,
+          budget: currentState.budget + sellPrice,
+          totalRoutes: Math.max(0, currentState.totalRoutes - 1),
+        };
 
-    toast({
-      title: 'Flugzeug verkauft',
-      description: `${plane.registration} wurde für €${sellPrice.toLocaleString('de-DE')} verkauft.`,
+        saveGameState(updatedAircraft, newState);
+
+        toast({
+          title: 'Flugzeug verkauft',
+          description: `${plane.registration} wurde für €${sellPrice.toLocaleString('de-DE')} verkauft.`,
+        });
+
+        return newState;
+      });
+
+      return updatedAircraft;
     });
-  }, [aircraft, gameState, toast, saveGameState]);
+  }, [toast, saveGameState]);
 
   const resetGame = useCallback(async () => {
     if (!userId) return;
@@ -742,25 +823,37 @@ export const useOnlineGameLogic = () => {
   }, [userId, toast]);
 
   const updateCabinConfig = useCallback(async (aircraftId: string, config: CabinConfiguration) => {
-    const updatedAircraft = aircraft.map(a =>
-      a.id === aircraftId ? { ...a, cabinConfig: config } : a
-    );
+    setAircraft(currentAircraft => {
+      const updatedAircraft = currentAircraft.map(a =>
+        a.id === aircraftId ? { ...a, cabinConfig: config } : a
+      );
 
-    setAircraft(updatedAircraft);
-    await saveGameState(updatedAircraft, gameState);
-  }, [aircraft, gameState, saveGameState]);
+      setGameState(currentState => {
+        saveGameState(updatedAircraft, currentState);
+        return currentState;
+      });
+
+      return updatedAircraft;
+    });
+  }, [saveGameState]);
 
   const updateBudget = useCallback(async (amount: number) => {
-    const newGameState = {
-      ...gameState,
-      budget: gameState.budget + amount,
-      totalRevenue: amount > 0 ? gameState.totalRevenue + amount : gameState.totalRevenue,
-    };
+    setGameState(currentState => {
+      const newState = {
+        ...currentState,
+        budget: currentState.budget + amount,
+        totalRevenue: amount > 0 ? currentState.totalRevenue + amount : currentState.totalRevenue,
+      };
 
-    setGameState(newGameState);
-    await saveGameState(aircraft, newGameState);
-  }, [gameState, aircraft, saveGameState]);
+      setAircraft(currentAircraft => {
+        saveGameState(currentAircraft, newState);
+        return currentAircraft;
+      });
 
+      return newState;
+    });
+  }, [saveGameState]);
+  
   const fleetStats = {
     totalAircraft: aircraft.length,
     idle: aircraft.filter((a) => a.status === 'idle').length,
