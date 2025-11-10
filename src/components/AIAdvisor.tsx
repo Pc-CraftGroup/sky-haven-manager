@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -63,14 +64,18 @@ const AIAdvisor: React.FC<AIAdvisorProps> = ({
   ];
 
   const streamChat = async (userMessage: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error('Du musst angemeldet sein, um den AI-Berater zu nutzen');
+    }
+
     const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-    const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
     const response = await fetch(`${SUPABASE_URL}/functions/v1/ai-advisor`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Authorization': `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
         message: userMessage,
